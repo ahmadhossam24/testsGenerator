@@ -205,3 +205,25 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# my files
+# Ignore build artifacts
+build/
+dist/
+
+# Ignore virtual environment
+venv/
+
+# Ignore PyInstaller spec file
+*.spec
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore logs
+*.log
+
+#audio files
+successAudio.mp3
