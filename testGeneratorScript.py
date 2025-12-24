@@ -26,6 +26,8 @@ class AnimalLearningGameGenerator:
         # Data storage
         self.animals = []
         self.questions = []
+        self.dialouges = []
+        self.reading_passages = []
         self.animals_per_row = 3
         
         # Create notebook for sections
@@ -39,6 +41,14 @@ class AnimalLearningGameGenerator:
         # Questions frame
         self.questions_frame = ttk.Frame(self.notebook, padding=10)
         self.notebook.add(self.questions_frame, text="Questions")
+
+        # dialouges frame
+        self.dialouges_frame = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.dialouges_frame, text="Dialouges")
+
+        # reading passages frame
+        self.reading_passages_frame = ttk.Frame(self.notebook, padding=10)
+        self.notebook.add(self.reading_passages_frame, text="Reading passages")
         
         # Settings frame
         self.settings_frame = ttk.Frame(self.notebook, padding=10)
@@ -55,6 +65,8 @@ class AnimalLearningGameGenerator:
         
         self.setup_animals_section()
         self.setup_questions_section()
+        self.setup_dialouges_section()
+        self.setup_reading_passages_section()
         self.setup_settings_section()
         self.setup_menu()
         self.setup_context_menus()
@@ -310,6 +322,331 @@ class AnimalLearningGameGenerator:
     def remove_question_frame(self, frame):
         frame.destroy()
         self.questions.remove(frame)
+
+    def setup_dialouges_section(self):
+        # Add dialouge button
+        ttk.Button(self.dialouges_frame, text="Add Dialogue", command=self.add_dialogue_frame).pack(pady=5)
+        
+        # Create a frame for the canvas and scrollbar
+        container = ttk.Frame(self.dialouges_frame)
+        container.pack(fill='both', expand=True, pady=10)
+        
+        # Create a canvas and scrollbar
+        canvas = tk.Canvas(container)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        self.dialouges_container = ttk.Frame(canvas)
+        
+        # Configure the canvas
+        self.dialouges_container.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        # Create a window in the canvas for the dialogue container
+        canvas.create_window((0, 0), window=self.dialouges_container, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Pack the canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Add initial dialogue frame
+        self.add_dialogue_frame()
+
+    def add_dialogue_frame(self):
+        dialogue_data = {
+            "lines": []
+        }
+        self.dialouges.append(dialogue_data)
+
+        # ================= Dialogue Frame =================
+        dialogue_frame = ttk.LabelFrame(
+            self.dialouges_container,
+            text=f"Dialogue {len(self.dialouges)}",
+            padding=10
+        )
+        dialogue_frame.pack(fill="x", pady=10, padx=5)
+
+        # ================= Remove Dialogue =================
+        def remove_dialogue():
+            self.dialouges.remove(dialogue_data)
+            dialogue_frame.destroy()
+
+        ttk.Button(
+            dialogue_frame,
+            text="Delete Dialogue",
+            command=remove_dialogue
+        ).pack(anchor="e", pady=5)
+
+        # ================= Lines Container =================
+        lines_container = ttk.Frame(dialogue_frame)
+        lines_container.pack(fill="x")
+
+        # ================= Add Line =================
+        def add_line():
+            line_data = {
+                "title":"",
+                "image": "",
+                "position": "left",
+                "text": "",
+                "audio": ""
+            }
+            dialogue_data["lines"].append(line_data)
+
+            line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
+            line_frame.pack(fill="x", pady=5)
+
+            # ---- Title ----
+            ttk.Label(line_frame, text="Dialouge Tilte:").grid(row=0, column=0, sticky="w")
+            title_entry = ttk.Entry(line_frame, width=40)
+            title_entry.grid(row=0, column=1, padx=5)
+            title_entry.bind(
+                "<KeyRelease>",
+                lambda e: line_data.update({"title": title_entry.get()})
+            )
+
+            # ---- Image ----
+            ttk.Label(line_frame, text="Image URL:").grid(row=1, column=0, sticky="w")
+            image_entry = ttk.Entry(line_frame, width=40)
+            image_entry.grid(row=1, column=1, padx=5)
+            image_entry.bind(
+                "<KeyRelease>",
+                lambda e: line_data.update({"image": image_entry.get()})
+            )
+
+            # ---- Position ----
+            ttk.Label(line_frame, text="Position:").grid(row=1, column=2, padx=5)
+            position_var = tk.StringVar(value="left")
+            position_menu = ttk.Combobox(
+                line_frame,
+                textvariable=position_var,
+                values=["left", "right"],
+                state="readonly",
+                width=7
+            )
+            position_menu.grid(row=1, column=3)
+            position_var.trace_add(
+                "write",
+                lambda *args: line_data.update({"position": position_var.get()})
+            )
+
+            # ---- Text ----
+            ttk.Label(line_frame, text="Dialogue Text:").grid(row=2, column=0, sticky="nw")
+            text_box = tk.Text(line_frame, height=3, width=60)
+            text_box.grid(row=2, column=1, columnspan=3, pady=5)
+
+            def update_text(event):
+                line_data["text"] = text_box.get("1.0", "end").strip()
+
+            text_box.bind("<KeyRelease>", update_text)
+
+            # ---- Audio ----
+            ttk.Label(line_frame, text="Audio:").grid(row=3, column=0, sticky="w")
+            audio_entry = ttk.Entry(line_frame, width=40)
+            audio_entry.grid(row=3, column=1, padx=5)
+
+            ttk.Button(
+                line_frame,
+                text="Browse",
+                command=lambda: (
+                    self.browse_audio(audio_entry),
+                    line_data.update({"audio": audio_entry.get()})
+                )
+            ).grid(row=3, column=2)
+
+            # ---- Delete Line ----
+            def remove_line():
+                dialogue_data["lines"].remove(line_data)
+                line_frame.destroy()
+
+            ttk.Button(
+                line_frame,
+                text="Delete Line",
+                command=remove_line
+            ).grid(row=3, column=3, padx=5)
+
+        # ================= Buttons =================
+        ttk.Button(
+            dialogue_frame,
+            text="Add Dialogue Line",
+            command=add_line
+        ).pack(pady=5)
+
+        # Add first line by default
+        add_line()
+
+    def setup_reading_passages_section(self):
+        # Add reading_passage button
+        ttk.Button(self.reading_passages_frame, text="Add Dialogue", command=self.add_reading_passage_frame).pack(pady=5)
+        
+        # Create a frame for the canvas and scrollbar
+        container = ttk.Frame(self.reading_passages_frame)
+        container.pack(fill='both', expand=True, pady=10)
+        
+        # Create a canvas and scrollbar
+        canvas = tk.Canvas(container)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
+        self.reading_passages_container = ttk.Frame(canvas)
+        
+        # Configure the canvas
+        self.reading_passages_container.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        # Create a window in the canvas for the reading_passage container
+        canvas.create_window((0, 0), window=self.reading_passages_container, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Pack the canvas and scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Add initial reading_passage frame
+        self.add_reading_passage_frame()
+
+    def add_reading_passage_frame(self):
+        passage_data = {
+            "title": "",
+            "text": "",
+            "questions": []
+        }
+        self.reading_passages.append(passage_data)
+
+        # ================= Passage Frame =================
+        passage_frame = ttk.LabelFrame(
+            self.reading_passages_container,
+            text=f"Reading Passage {len(self.reading_passages)}",
+            padding=10
+        )
+        passage_frame.pack(fill="x", pady=10, padx=5)
+
+        # ================= Remove Passage =================
+        def remove_passage():
+            self.reading_passages.remove(passage_data)
+            passage_frame.destroy()
+
+        ttk.Button(
+            passage_frame,
+            text="Delete Passage",
+            command=remove_passage
+        ).pack(anchor="e", pady=5)
+
+        # ================= Title =================
+        ttk.Label(passage_frame, text="Passage Title:").pack(anchor="w")
+        title_entry = ttk.Entry(passage_frame, width=60)
+        title_entry.pack(fill="x", pady=3)
+
+        title_entry.bind(
+            "<KeyRelease>",
+            lambda e: passage_data.update({"title": title_entry.get()})
+        )
+
+        # ================= Passage Text =================
+        ttk.Label(passage_frame, text="Passage Text:").pack(anchor="w")
+        text_box = tk.Text(passage_frame, height=6)
+        text_box.pack(fill="x", pady=5)
+
+        def update_passage_text(event):
+            passage_data["text"] = text_box.get("1.0", "end").strip()
+
+        text_box.bind("<KeyRelease>", update_passage_text)
+
+        # ================= Questions Container =================
+        questions_container = ttk.Frame(passage_frame)
+        questions_container.pack(fill="x", pady=10)
+
+        # ================= Add Question =================
+        def add_question():
+            question_data = {
+                "sentence": "",
+                "blank_after_word": 0,
+                "choices": []
+            }
+            passage_data["questions"].append(question_data)
+
+            question_frame = ttk.Frame(questions_container, padding=5, relief="solid")
+            question_frame.pack(fill="x", pady=5)
+
+            # ---- Sentence ----
+            ttk.Label(question_frame, text="Sentence:").grid(row=0, column=0, sticky="w")
+            sentence_entry = ttk.Entry(question_frame, width=60)
+            sentence_entry.grid(row=0, column=1, columnspan=3, pady=3)
+
+            sentence_entry.bind(
+                "<KeyRelease>",
+                lambda e: question_data.update({"sentence": sentence_entry.get()})
+            )
+
+            # ---- Blank position ----
+            ttk.Label(question_frame, text="Blank after word #:").grid(row=1, column=0, sticky="w")
+            blank_spin = ttk.Spinbox(question_frame, from_=0, to=50, width=5)
+            blank_spin.grid(row=1, column=1, sticky="w")
+
+            blank_spin.bind(
+                "<KeyRelease>",
+                lambda e: question_data.update(
+                    {"blank_after_word": int(blank_spin.get() or 0)}
+                )
+            )
+
+            # ================= Choices Container =================
+            choices_container = ttk.Frame(question_frame)
+            choices_container.grid(row=2, column=0, columnspan=4, pady=5, sticky="w")
+
+            # ---- Add Choice ----
+            def add_choice():
+                choice_data = {"value": ""}
+                question_data["choices"].append(choice_data)
+
+                choice_frame = ttk.Frame(choices_container)
+                choice_frame.pack(fill="x", pady=2)
+
+                choice_entry = ttk.Entry(choice_frame, width=40)
+                choice_entry.pack(side="left", padx=3)
+
+                choice_entry.bind(
+                    "<KeyRelease>",
+                    lambda e: choice_data.update({"value": choice_entry.get()})
+                )
+
+                def remove_choice():
+                    question_data["choices"].remove(choice_data)
+                    choice_frame.destroy()
+
+                ttk.Button(
+                    choice_frame,
+                    text="Delete",
+                    command=remove_choice
+                ).pack(side="left")
+
+            ttk.Button(
+                question_frame,
+                text="Add Choice",
+                command=add_choice
+            ).grid(row=3, column=0, pady=5, sticky="w")
+
+            # ---- Remove Question ----
+            def remove_question():
+                passage_data["questions"].remove(question_data)
+                question_frame.destroy()
+
+            ttk.Button(
+                question_frame,
+                text="Delete Question",
+                command=remove_question
+            ).grid(row=3, column=3, pady=5, sticky="e")
+
+        # ================= Add Question Button =================
+        ttk.Button(
+            passage_frame,
+            text="Add Question",
+            command=add_question
+        ).pack(pady=5)
+
+        # Add first question by default
+        add_question()
+
         
     def setup_settings_section(self):
         # Output file settings
@@ -321,6 +658,9 @@ class AnimalLearningGameGenerator:
         
         # Configure grid weights
         self.settings_frame.columnconfigure(1, weight=1)
+
+    def setup_readings_section(self):
+        return
         
     def browse_output(self):
         filename = filedialog.asksaveasfilename(
@@ -457,6 +797,8 @@ class AnimalLearningGameGenerator:
             messagebox.showerror("Error", f"Failed to save configuration: {str(e)}")
             
     def generate_html(self):
+        print(self.reading_passages)#those are for debugging , should be removed
+        return#those are for debugging , should be removed
         try:
             # Prepare animals HTML
             animals_html = ""
