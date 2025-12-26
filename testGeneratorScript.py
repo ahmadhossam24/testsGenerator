@@ -355,6 +355,7 @@ class AnimalLearningGameGenerator:
 
     def add_dialogue_frame(self):
         dialogue_data = {
+            "title":"",
             "lines": []
         }
         self.dialouges.append(dialogue_data)
@@ -366,6 +367,15 @@ class AnimalLearningGameGenerator:
             padding=10
         )
         dialogue_frame.pack(fill="x", pady=10, padx=5)
+
+        # ================= Dialogue Title =================
+        ttk.Label(dialogue_frame, text="Dialogue Title:").pack(anchor="w", padx=5)
+        title_entry = ttk.Entry(dialogue_frame, width=40)
+        title_entry.pack(fill="x", padx=5, pady=(0, 10))
+        title_entry.bind(
+            "<KeyRelease>",
+            lambda e: dialogue_data.update({"title": title_entry.get()})
+        )
 
         # ================= Remove Dialogue =================
         def remove_dialogue():
@@ -385,7 +395,6 @@ class AnimalLearningGameGenerator:
         # ================= Add Line =================
         def add_line():
             line_data = {
-                "title":"",
                 "image": "",
                 "position": "left",
                 "text": "",
@@ -396,26 +405,17 @@ class AnimalLearningGameGenerator:
             line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
             line_frame.pack(fill="x", pady=5)
 
-            # ---- Title ----
-            ttk.Label(line_frame, text="Dialouge Tilte:").grid(row=0, column=0, sticky="w")
-            title_entry = ttk.Entry(line_frame, width=40)
-            title_entry.grid(row=0, column=1, padx=5)
-            title_entry.bind(
-                "<KeyRelease>",
-                lambda e: line_data.update({"title": title_entry.get()})
-            )
-
             # ---- Image ----
-            ttk.Label(line_frame, text="Image URL:").grid(row=1, column=0, sticky="w")
+            ttk.Label(line_frame, text="Image URL:").grid(row=0, column=0, sticky="w")
             image_entry = ttk.Entry(line_frame, width=40)
-            image_entry.grid(row=1, column=1, padx=5)
+            image_entry.grid(row=0, column=1, padx=5)
             image_entry.bind(
                 "<KeyRelease>",
                 lambda e: line_data.update({"image": image_entry.get()})
             )
 
             # ---- Position ----
-            ttk.Label(line_frame, text="Position:").grid(row=1, column=2, padx=5)
+            ttk.Label(line_frame, text="Position:").grid(row=0, column=2, padx=5)
             position_var = tk.StringVar(value="left")
             position_menu = ttk.Combobox(
                 line_frame,
@@ -424,16 +424,16 @@ class AnimalLearningGameGenerator:
                 state="readonly",
                 width=7
             )
-            position_menu.grid(row=1, column=3)
+            position_menu.grid(row=0, column=3)
             position_var.trace_add(
                 "write",
                 lambda *args: line_data.update({"position": position_var.get()})
             )
 
             # ---- Text ----
-            ttk.Label(line_frame, text="Dialogue Text:").grid(row=2, column=0, sticky="nw")
+            ttk.Label(line_frame, text="Dialogue Text:").grid(row=1, column=0, sticky="nw")
             text_box = tk.Text(line_frame, height=3, width=60)
-            text_box.grid(row=2, column=1, columnspan=3, pady=5)
+            text_box.grid(row=1, column=1, columnspan=3, pady=5)
 
             def update_text(event):
                 line_data["text"] = text_box.get("1.0", "end").strip()
@@ -441,9 +441,9 @@ class AnimalLearningGameGenerator:
             text_box.bind("<KeyRelease>", update_text)
 
             # ---- Audio ----
-            ttk.Label(line_frame, text="Audio:").grid(row=3, column=0, sticky="w")
+            ttk.Label(line_frame, text="Audio:").grid(row=2, column=0, sticky="w")
             audio_entry = ttk.Entry(line_frame, width=40)
-            audio_entry.grid(row=3, column=1, padx=5)
+            audio_entry.grid(row=2, column=1, padx=5)
 
             ttk.Button(
                 line_frame,
@@ -452,7 +452,7 @@ class AnimalLearningGameGenerator:
                     self.browse_audio(audio_entry),
                     line_data.update({"audio": audio_entry.get()})
                 )
-            ).grid(row=3, column=2)
+            ).grid(row=2, column=2)
 
             # ---- Delete Line ----
             def remove_line():
@@ -463,7 +463,7 @@ class AnimalLearningGameGenerator:
                 line_frame,
                 text="Delete Line",
                 command=remove_line
-            ).grid(row=3, column=3, padx=5)
+            ).grid(row=2, column=3, padx=5)
 
         # ================= Buttons =================
         ttk.Button(
@@ -552,7 +552,7 @@ class AnimalLearningGameGenerator:
 
         text_box.bind("<KeyRelease>", update_passage_text)
 
-        # ================= Questions Container =================
+        # ================= Questions Container ================= 
         questions_container = ttk.Frame(passage_frame)
         questions_container.pack(fill="x", pady=10)
 
@@ -561,7 +561,8 @@ class AnimalLearningGameGenerator:
             question_data = {
                 "sentence": "",
                 "blank_after_word": 0,
-                "choices": []
+                "choices": [],
+                "correct_choice_index": None
             }
             passage_data["questions"].append(question_data)
 
@@ -594,6 +595,7 @@ class AnimalLearningGameGenerator:
             choices_container = ttk.Frame(question_frame)
             choices_container.grid(row=2, column=0, columnspan=4, pady=5, sticky="w")
 
+            correct_choice_var = tk.IntVar(value=-1)
             # ---- Add Choice ----
             def add_choice():
                 choice_data = {"value": ""}
@@ -601,6 +603,18 @@ class AnimalLearningGameGenerator:
 
                 choice_frame = ttk.Frame(choices_container)
                 choice_frame.pack(fill="x", pady=2)
+
+                choice_index = len(question_data["choices"])
+
+                radio = ttk.Radiobutton(
+                    choice_frame,
+                    variable=correct_choice_var,
+                    value=choice_index,
+                    command=lambda: question_data.update({
+                        "correct_choice_index": correct_choice_var.get()
+                    })
+                )
+                radio.pack(side="left")
 
                 choice_entry = ttk.Entry(choice_frame, width=40)
                 choice_entry.pack(side="left", padx=3)
@@ -613,6 +627,9 @@ class AnimalLearningGameGenerator:
                 def remove_choice():
                     question_data["choices"].remove(choice_data)
                     choice_frame.destroy()
+                    if question_data["correct_choice_index"] == choice_index:
+                        question_data["correct_choice_index"] = None
+                        correct_choice_var.set(-1)
 
                 ttk.Button(
                     choice_frame,
@@ -798,6 +815,7 @@ class AnimalLearningGameGenerator:
             
     def generate_html(self):
         print(self.reading_passages)#those are for debugging , should be removed
+        print(self.dialouges)#those are for debugging , should be removed
         return#those are for debugging , should be removed
         try:
             # Prepare animals HTML
@@ -1090,12 +1108,19 @@ class AnimalLearningGameGenerator:
     {correct_answer_text_js}
     
     // تشغيل الصوت
-    function playAudio(audioId) {{
-      const audio = document.getElementById(audioId);
-      if (audio) {{
-        audio.currentTime = 0;
-        audio.play();
-      }}
+    let currentAudio = null; // keep track of the currently playing audio
+    function playAudio(audioId) {{ // Stop the currently playing audio if there is one 
+        if (currentAudio && !currentAudio.paused) {{
+            currentAudio.pause(); 
+            currentAudio.currentTime = 0; 
+            }}
+        // Get the new audio element 
+        const audio = document.getElementById(audioId); 
+        if (audio) {{
+            currentAudio = audio; // update the reference 
+            audio.currentTime = 0; 
+            audio.play(); 
+            }} 
     }}
     
     // التحقق من الإجابات
