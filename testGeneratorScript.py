@@ -814,9 +814,6 @@ class AnimalLearningGameGenerator:
             messagebox.showerror("Error", f"Failed to save configuration: {str(e)}")
             
     def generate_html(self):
-        print(self.reading_passages)#those are for debugging , should be removed
-        print(self.dialouges)#those are for debugging , should be removed
-        return#those are for debugging , should be removed
         try:
             # Prepare animals HTML
             animals_html = ""
@@ -852,6 +849,49 @@ class AnimalLearningGameGenerator:
             
             if self.animals:
                 animals_html += "</div>\n"
+
+            # ----------------- Insert: build dialogues_html here -----------------
+            dialogues_html = ""
+            for d_idx, dialogue in enumerate(self.dialouges):
+                title = dialogue.get("title", "")
+                dialogues_html += f'<div class="dialogue" id="dialogue_{d_idx}">\n'
+                if title:
+                    dialogues_html += f'  <h3 class="dialogue-title">{title}</h3>\n'
+                dialogues_html += '  <div class="dialogue-container">\n'
+
+                for l_idx, line in enumerate(dialogue.get("lines", [])):
+                    img = line.get("image", "") or ""
+                    pos = (line.get("position", "") or "left").lower()
+                    text = line.get("text", "") or ""
+
+                    # encode audio file to base64 like you did for animals
+                    audio_data = ""
+                    audio_path = line.get("audio", "") or ""
+                    if audio_path and os.path.exists(audio_path):
+                        with open(audio_path, "rb") as af:
+                            audio_data = base64.b64encode(af.read()).decode("utf-8")
+
+                    audio_ext = os.path.splitext(audio_path)[1].lower() if audio_path else ""
+                    mime_type = f"audio/{audio_ext[1:]}" if audio_ext else "audio/mpeg"
+
+                    # dialogue line HTML: clicking calls selectLine(...) and playAudio(...)
+                    dialogues_html += f'''
+                <div class="dialogue-line {pos}" id="dialogue_line_{d_idx}_{l_idx}"
+                    onclick="selectLine('dialogue_line_{d_idx}_{l_idx}'); playAudio('dialogue_audio_{d_idx}_{l_idx}')">
+                    <div class="dialogue-thumb">
+                        {"<img src=\"" + img + "\" alt=\"line image\" />" if img else ""}
+                    </div>
+                    <div class="dialogue-body">
+                        <div class="dialogue-text">{text}</div>
+                    </div>
+                    <audio id="dialogue_audio_{d_idx}_{l_idx}">
+                        <source src="data:{mime_type};base64,{audio_data}" type="{mime_type}">
+                    </audio>
+                </div>
+            '''
+                dialogues_html += "  </div>\n</div>\n"
+            # ---------------------------------------------------------------------
+
                 
             # Prepare questions HTML
             questions_html = ""
@@ -981,6 +1021,54 @@ class AnimalLearningGameGenerator:
       font-weight: bold;
       color: #0277bd;
     }}
+
+    /* Dialogues */
+    .dialogue {{ margin: 20px 0; text-align: right; }}
+    .dialogue-title {{ margin: 0 0 8px 0; color: #0277bd; }}
+    .dialogue-container {{ display: flex; flex-direction: column; gap: 8px; }}
+
+    .dialogue-line {{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 12px;
+    background: #fff8e1;
+    cursor: pointer;
+    transition: transform 0.18s, box-shadow 0.18s;
+    border: 2px solid transparent;
+    }}
+    .dialogue-line:hover {{ transform: translateY(-3px); box-shadow: 0 6px 14px rgba(0,0,0,0.08); }}
+
+    /* left / right alignment classes */
+    .dialogue-line.left  {{ flex-direction: row-reverse; }} /* image on right (RTL page) */
+    .dialogue-line.right {{ flex-direction: row; }}         /* image on left */
+
+    .dialogue-thumb img {{
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 3px solid #81d4fa;
+    transition: transform 0.18s, border-color 0.18s;
+    }}
+
+    /* active (selected) line */
+    .dialogue-line.active {{
+    transform: scale(1.02);
+    border-color: #0288d1;
+    box-shadow: 0 10px 30px rgba(2,62,118,0.12);
+    }}
+    .dialogue-line.active .dialogue-thumb img {{
+    transform: scale(1.06);
+    border-color: #0288d1;
+    }}
+
+    .dialogue-body {{ flex: 1; text-align: right; }}
+    .dialogue-text {{ font-size: 1rem; color: #01579b; }}
+    @media (max-width: 600px) {{
+    .dialogue-thumb img {{ width: 60px; height: 60px; }}
+    }}
     
     /* تحسين الأسئلة والخيارات */
     .questions-container {{
@@ -1092,6 +1180,11 @@ class AnimalLearningGameGenerator:
     <!-- صور الحيوانات -->
     {animals_html}
 
+    <!-- <-- المحادثات -->
+    {dialogues_html}
+
+    <hr>
+
     <hr>
 
     <!-- الأسئلة -->
@@ -1122,6 +1215,26 @@ class AnimalLearningGameGenerator:
             audio.play(); 
             }} 
     }}
+
+    // mark a dialogue line as active (visual) and remove the previous active
+    function selectLine(lineId) {{
+    // remove active from previous
+    const prev = document.querySelector('.dialogue-line.active');
+    if (prev && prev.id !== lineId) prev.classList.remove('active');
+
+    // toggle or set active on clicked
+    const el = document.getElementById(lineId);
+    if (el) {{
+        el.classList.add('active');
+        // keep it active briefly while audio plays (optional behaviour)
+        // you may remove the timeout if you prefer to keep it active until next click
+        setTimeout(() => {{
+        // if audio finished, we could remove active — but rely on next click for clarity
+        // el.classList.remove('active');
+        }}, 3000);
+    }}
+    }}
+
     
     // التحقق من الإجابات
     function checkAnswer(questionId, answerIndex) {{
@@ -1178,6 +1291,7 @@ class AnimalLearningGameGenerator:
             html_content = html_template.format(
                 successAudioEncoded=successAudioEncoded,
                 animals_html=animals_html,
+                dialogues_html=dialogues_html,
                 questions_html=questions_html,
                 correct_answers_js=correct_answers_js,
                 correct_answer_text_js=correct_answer_text_js
