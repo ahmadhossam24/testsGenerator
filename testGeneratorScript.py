@@ -398,6 +398,7 @@ class AnimalLearningGameGenerator:
                 "image": "",
                 "position": "left",
                 "text": "",
+                "translation":"",
                 "audio": ""
             }
             dialogue_data["lines"].append(line_data)
@@ -440,10 +441,20 @@ class AnimalLearningGameGenerator:
 
             text_box.bind("<KeyRelease>", update_text)
 
+            # ---- Text translation ----
+            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=2, column=0, sticky="nw")
+            text_translation_box = tk.Text(line_frame, height=3, width=60)
+            text_translation_box.grid(row=2, column=1, columnspan=3, pady=5)
+
+            def update_translation(event):
+                line_data["translation"] = text_translation_box.get("1.0", "end").strip()
+
+            text_translation_box.bind("<KeyRelease>", update_translation)
+
             # ---- Audio ----
-            ttk.Label(line_frame, text="Audio:").grid(row=2, column=0, sticky="w")
+            ttk.Label(line_frame, text="Audio:").grid(row=3, column=0, sticky="w")
             audio_entry = ttk.Entry(line_frame, width=40)
-            audio_entry.grid(row=2, column=1, padx=5)
+            audio_entry.grid(row=3, column=1, padx=5)
 
             ttk.Button(
                 line_frame,
@@ -452,7 +463,7 @@ class AnimalLearningGameGenerator:
                     self.browse_audio(audio_entry),
                     line_data.update({"audio": audio_entry.get()})
                 )
-            ).grid(row=2, column=2)
+            ).grid(row=3, column=2)
 
             # ---- Delete Line ----
             def remove_line():
@@ -463,7 +474,7 @@ class AnimalLearningGameGenerator:
                 line_frame,
                 text="Delete Line",
                 command=remove_line
-            ).grid(row=2, column=3, padx=5)
+            ).grid(row=3, column=3, padx=5)
 
         # ================= Buttons =================
         ttk.Button(
@@ -856,13 +867,14 @@ class AnimalLearningGameGenerator:
                 title = dialogue.get("title", "")
                 dialogues_html += f'<div class="dialogue" id="dialogue_{d_idx}">\n'
                 if title:
-                    dialogues_html += f'  <h3 class="dialogue-title">{title}</h3>\n'
+                    dialogues_html += f'  <h3 class="dialogue-title">{title}</h3> <button onclick="autoplayDialogue()">▶️ Auto Play Dialogue</button>\n'
                 dialogues_html += '  <div class="dialogue-container">\n'
 
                 for l_idx, line in enumerate(dialogue.get("lines", [])):
                     img = line.get("image", "") or ""
                     pos = (line.get("position", "") or "left").lower()
                     text = line.get("text", "") or ""
+                    translation = line.get("translation", "") or ""
 
                     # encode audio file to base64 like you did for animals
                     audio_data = ""
@@ -876,18 +888,34 @@ class AnimalLearningGameGenerator:
 
                     # dialogue line HTML: clicking calls selectLine(...) and playAudio(...)
                     dialogues_html += f'''
-                <div class="dialogue-line {pos}" id="dialogue_line_{d_idx}_{l_idx}"
-                    onclick="selectLine('dialogue_line_{d_idx}_{l_idx}'); playAudio('dialogue_audio_{d_idx}_{l_idx}')">
-                    <div class="dialogue-thumb">
+                <div class="dialogue-line-wrapper {pos}" id="dialogue_wrap_{d_idx}_{l_idx}">
+                    
+                    <!-- MAIN (yellow) -->
+                    <div class="dialogue-line main-line"
+                        id="dialogue_line_{d_idx}_{l_idx}"
+                        onclick="onDialogueClick({d_idx}, {l_idx})">
+
+                        <div class="dialogue-thumb">
                         {"<img src=\"" + img + "\" alt=\"line image\" />" if img else ""}
+                        <span class="mic-icon">🎤</span>
+                        </div>
+
+                        <div class="dialogue-body">
+                        <div class="dialogue-text" id="dialogue_text_{d_idx}_{l_idx}" data-fulltext="{text}"></div>
+                        </div>
                     </div>
-                    <div class="dialogue-body">
-                        <div class="dialogue-text">{text}</div>
+
+                    <!-- TRANSLATION (hidden by default) -->
+                    <div class="dialogue-translation" id="dialogue_translation_{d_idx}_{l_idx}">
+                        {translation}
                     </div>
+
                     <audio id="dialogue_audio_{d_idx}_{l_idx}">
                         <source src="data:{mime_type};base64,{audio_data}" type="{mime_type}">
                     </audio>
-                </div>
+
+                    </div>
+
             '''
                 dialogues_html += "  </div>\n</div>\n"
             # ---------------------------------------------------------------------
@@ -1023,6 +1051,75 @@ class AnimalLearningGameGenerator:
     }}
 
     /* Dialogues */
+    .dialogue-line-wrapper {{
+    display: flex;
+    gap: 6%;
+    margin-bottom: 14px;
+    }}
+
+    /* left / right */
+    .dialogue-line-wrapper.left  {{ flex-direction: row-reverse; }}
+    .dialogue-line-wrapper.right {{ flex-direction: row; }}
+
+    /* MAIN yellow section */
+    .main-line {{
+    background: #fff8e1;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: fit-content;            /* start as image-width */
+    max-width: 47%;
+    transition: width 0.4s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    }}
+
+    .main-line.expanded {{
+    width: 47%;
+    }}
+
+    /* text grows vertically after width max */
+    .dialogue-body {{
+    flex: 1;
+    }}
+
+    /* image + mic */
+    .dialogue-thumb {{
+    position: relative;
+    }}
+    .dialogue-thumb img {{
+    width: 80px;
+    height: 80px;
+    border-radius: 10px;
+    }}
+    .mic-icon {{
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    background: #0288d1;
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+    padding: 3px;
+    }}
+
+    /* translation */
+    .dialogue-translation {{
+    max-width: 47%;
+    background: #e1f5fe;
+    border-radius: 12px;
+    padding: 10px;
+    display: none;
+    }}
+
+    /* active */
+    .main-line.active {{
+    box-shadow: 0 10px 25px rgba(2,62,118,0.15);
+    }}
+
     .dialogue {{ margin: 20px 0; text-align: right; }}
     .dialogue-title {{ margin: 0 0 8px 0; color: #0277bd; }}
     .dialogue-container {{ display: flex; flex-direction: column; gap: 8px; }}
@@ -1234,6 +1331,60 @@ class AnimalLearningGameGenerator:
         }}, 3000);
     }}
     }}
+
+    function typeText(element, text, duration) {{
+        element.textContent = "";
+        let i = 0;
+        const interval = duration / text.length;
+
+        const typer = setInterval(() => {{
+            element.textContent += text[i];
+            i++;
+            if (i >= text.length) clearInterval(typer);
+        }}, interval);
+    }}
+
+    const playedLines = new Set();
+
+    function onDialogueClick(d, l) {{
+        const key = `${{d}}_${{l}}`;
+        const line = document.getElementById(`dialogue_line_${{d}}_${{l}}`);
+        const textBox = document.getElementById(`dialogue_text_${{d}}_${{l}}`);
+        const audioId = `dialogue_audio_${{d}}_${{l}}`;
+
+        // Always play audio
+        playAudio(audioId);
+
+        // Only animate first time
+        if (playedLines.has(key)) return;
+
+        playedLines.add(key);
+        line.classList.add("active", "expanded");
+
+        const fullText = textBox.dataset.fulltext;
+        const audio = document.getElementById(audioId);
+
+        audio.onplay = () => {{
+            typeText(textBox, fullText, audio.duration * 1000);
+        }};
+        }}
+
+        async function autoplayDialogue() {{
+            const lines = document.querySelectorAll(".dialogue-line-wrapper");
+            for (const wrapper of lines) {{
+                const main = wrapper.querySelector(".main-line");
+                const id = main.id.split("dialogue_line_")[1];
+                const [d, l] = id.split("_");
+
+                onDialogueClick(d, l);
+
+                const audio = document.getElementById(`dialogue_audio_${{d}}_${{l}}`);
+                await new Promise(res => {{
+                audio.onended = res;
+                }});
+            }}
+            }}
+
 
     
     // التحقق من الإجابات
