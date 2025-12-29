@@ -867,7 +867,9 @@ class AnimalLearningGameGenerator:
                 title = dialogue.get("title", "")
                 dialogues_html += f'<div class="dialogue" id="dialogue_{d_idx}">\n'
                 if title:
-                    dialogues_html += f'  <h3 class="dialogue-title">{title}</h3> <button onclick="autoplayDialogue()">▶️ Auto Play Dialogue</button>\n'
+                    dialogues_html += f' <div class="dialogue-head"><h3 class="dialogue-title">{title}</h3> <button class="autoplay-dialogue-button" onclick="autoplayDialogue()">▶️ Auto Play Dialogue</button></div> \n'
+                else:
+                    dialogues_html += f' <div class="dialogue-head"> <button onclick="autoplayDialogue()">▶️ Auto Play Dialogue</button></div>\n'
                 dialogues_html += '  <div class="dialogue-container">\n'
 
                 for l_idx, line in enumerate(dialogue.get("lines", [])):
@@ -891,7 +893,7 @@ class AnimalLearningGameGenerator:
                 <div class="dialogue-line-wrapper {pos}" id="dialogue_wrap_{d_idx}_{l_idx}">
                     
                     <!-- MAIN (yellow) -->
-                    <div class="dialogue-line main-line"
+                    <div class="dialogue-line main-line {pos}"
                         id="dialogue_line_{d_idx}_{l_idx}"
                         onclick="onDialogueClick({d_idx}, {l_idx})">
 
@@ -900,11 +902,13 @@ class AnimalLearningGameGenerator:
                         <span class="mic-icon">🎤</span>
                         </div>
 
-                        <div class="dialogue-body">
+                        <div class="dialogue-body {pos}">
                         <div class="dialogue-text" id="dialogue_text_{d_idx}_{l_idx}" data-fulltext="{text}"></div>
                         </div>
                     </div>
 
+                    <!-- TRANSLATION button -->
+                    <button class="show-translation-button" id="line_translation_button_{d_idx}_{l_idx}" onclick="showTranslate({d_idx},{l_idx})">🈯 Translate</button>
                     <!-- TRANSLATION (hidden by default) -->
                     <div class="dialogue-translation" id="dialogue_translation_{d_idx}_{l_idx}">
                         {translation}
@@ -1051,9 +1055,20 @@ class AnimalLearningGameGenerator:
     }}
 
     /* Dialogues */
+    .dialogue-head {{
+        display:flex;
+        justify-content:space-between;
+        margin-bottom:3px;
+    }}
+
+    .autoplay-dialogue-button{{
+        border-radius:5px;
+        cursor:pointer;
+    }}
+
     .dialogue-line-wrapper {{
     display: flex;
-    gap: 6%;
+    gap: 3%;
     margin-bottom: 14px;
     }}
 
@@ -1086,6 +1101,11 @@ class AnimalLearningGameGenerator:
     flex: 1;
     }}
 
+    .dialogue-body.left {{
+    text-align:left;
+    flex: 1;
+    }}
+
     /* image + mic */
     .dialogue-thumb {{
     position: relative;
@@ -1107,12 +1127,27 @@ class AnimalLearningGameGenerator:
     }}
 
     /* translation */
+    .show-translation-button{{
+        height:fit-content;
+        border-radius:5px;
+        cursor:pointer;
+    }}
+    .show-translation-button.hide{{
+        display:none;
+    }}
+
     .dialogue-translation {{
     max-width: 47%;
     background: #e1f5fe;
     border-radius: 12px;
     padding: 10px;
     display: none;
+    }}
+
+    .dialogue-translation.show {{
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
     }}
 
     /* active */
@@ -1161,7 +1196,7 @@ class AnimalLearningGameGenerator:
     border-color: #0288d1;
     }}
 
-    .dialogue-body {{ flex: 1; text-align: right; }}
+    .dialogue-body {{ flex: 1; }}
     .dialogue-text {{ font-size: 1rem; color: #01579b; }}
     @media (max-width: 600px) {{
     .dialogue-thumb img {{ width: 60px; height: 60px; }}
@@ -1365,7 +1400,7 @@ class AnimalLearningGameGenerator:
         const audio = document.getElementById(audioId);
 
         audio.onplay = () => {{
-            typeText(textBox, fullText, audio.duration * 1000);
+            typeText(textBox, fullText, audio.duration * 300);
         }};
         }}
 
@@ -1384,6 +1419,14 @@ class AnimalLearningGameGenerator:
                 }});
             }}
             }}
+
+        async function showTranslate(d, l) {{
+            const translation_line = document.getElementById(`dialogue_translation_${{d}}_${{l}}`);
+            translation_line.classList.add("show");
+            const translation_line_button = document.getElementById(`line_translation_button_${{d}}_${{l}}`);
+            translation_line_button.classList.add("hide");
+            
+            }}   
 
 
     
