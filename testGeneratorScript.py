@@ -178,6 +178,10 @@ class AnimalLearningGameGenerator:
         audio_entry = ttk.Entry(audio_frame, width=35)
         audio_entry.pack(side='left', fill='x', expand=True)
         ttk.Button(audio_frame, text="Browse", command=lambda: self.browse_audio(audio_entry)).pack(side='right', padx=5)
+
+        ttk.Button(frame, text="Duplicate", 
+           command=lambda: self.duplicate_animal_frame(frame)) \
+       .grid(row=4, column=0, sticky='w', pady=5)
         
         # Remove button
         ttk.Button(frame, text="Remove", command=lambda: self.remove_animal_frame(frame)).grid(row=4, column=1, sticky='e', pady=5)
@@ -189,7 +193,63 @@ class AnimalLearningGameGenerator:
         frame.audio = audio_entry
         
         self.animals.append(frame)
+
+    def duplicate_animal_frame(self, source_frame):
+        # 1. Get values from source frame
+        image_url = source_frame.image_url.get()
+        title = source_frame.title.get()
+        word = source_frame.word.get()
+        audio = source_frame.audio.get()
         
+        # 2. Create new frame (adds at end automatically via pack)
+        new_frame = ttk.Frame(self.animals_container, relief='groove', borderwidth=1)
+        new_frame.pack(fill='x', pady=5, padx=5)
+        
+        # Image URL
+        ttk.Label(new_frame, text="Image URL:").grid(row=0, column=0, sticky='w', pady=2)
+        image_url_entry = ttk.Entry(new_frame, width=40)
+        image_url_entry.grid(row=0, column=1, pady=2, padx=5)
+        
+        # Title
+        ttk.Label(new_frame, text="Title (e.g., 'Cat (قطة)'):").grid(row=1, column=0, sticky='w', pady=2)
+        title_entry = ttk.Entry(new_frame, width=40)
+        title_entry.grid(row=1, column=1, pady=2, padx=5)
+        
+        # Word to speak
+        ttk.Label(new_frame, text="Word to speak (Arabic):").grid(row=2, column=0, sticky='w', pady=2)
+        word_entry = ttk.Entry(new_frame, width=40)
+        word_entry.grid(row=2, column=1, pady=2, padx=5)
+        
+        # Audio file
+        ttk.Label(new_frame, text="Audio file:").grid(row=3, column=0, sticky='w', pady=2)
+        audio_frame = ttk.Frame(new_frame)
+        audio_frame.grid(row=3, column=1, sticky='we', pady=2)
+        audio_entry = ttk.Entry(audio_frame, width=35)
+        audio_entry.pack(side='left', fill='x', expand=True)
+        ttk.Button(audio_frame, text="Browse", command=lambda: self.browse_audio(audio_entry)).pack(side='right', padx=5)
+
+        ttk.Button(new_frame, text="Duplicate", 
+        command=lambda: self.duplicate_animal_frame(new_frame)) \
+    .grid(row=4, column=0, sticky='w', pady=5)
+        
+        # Remove button
+        ttk.Button(new_frame, text="Remove", command=lambda: self.remove_animal_frame(new_frame)).grid(row=4, column=1, sticky='e', pady=5)
+        
+        # Store references - YOU WERE MISSING THIS!
+        new_frame.image_url = image_url_entry
+        new_frame.title = title_entry
+        new_frame.word = word_entry
+        new_frame.audio = audio_entry
+        
+        # NOW insert the values
+        image_url_entry.insert(0, image_url)
+        title_entry.insert(0, title)
+        word_entry.insert(0, word)
+        audio_entry.insert(0, audio)
+        
+        # Add to tracking list
+        self.animals.append(new_frame)
+
     def remove_animal_frame(self, frame):
         frame.destroy()
         self.animals.remove(frame)
@@ -322,6 +382,8 @@ class AnimalLearningGameGenerator:
     def remove_question_frame(self, frame):
         frame.destroy()
         self.questions.remove(frame)
+
+    ### dialouges ###
 
     def setup_dialouges_section(self):
         # Add dialouge button
