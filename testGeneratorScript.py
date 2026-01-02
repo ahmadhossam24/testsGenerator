@@ -1097,7 +1097,7 @@ class AnimalLearningGameGenerator:
                 """
             
             if self.animals:
-                animals_html += "</div>\n"
+                animals_html += "</div>\n<hr>\n<hr>\n"
 
             # ----------------- Insert: build dialogues_html here -----------------
             dialogues_html = ""
@@ -1159,7 +1159,7 @@ class AnimalLearningGameGenerator:
                     </div>
 
             '''
-                dialogues_html += "  </div>\n</div>\n"
+                dialogues_html += "  </div>\n</div>\n<hr>\n<hr>\n"
             # ---------------------------------------------------------------------
 
                 
@@ -1708,6 +1708,189 @@ class AnimalLearningGameGenerator:
       color: #dc3545;
       margin-right: 5px;
     }}
+     /* Feelings Feedback Section - Fixed Version */
+    .feelings-section {{
+    margin: 40px 0 30px 0;
+    padding: 25px;
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-radius: 15px;
+    border: 2px solid #bbdefb;
+    }}
+
+    .feelings-title {{
+    color: #0288d1;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    font-weight: bold;
+    }}
+
+    .feelings-container {{
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    flex-wrap: wrap;
+    }}
+
+    .feeling-item {{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 10px;
+    }}
+
+    /* Default emoji state - faded and small */
+    .feeling-emoji {{
+    font-size: 3rem;
+    margin-bottom: 8px;
+    opacity: 0.6;
+    filter: grayscale(0.2);
+    transition: all 0.3s ease;
+    transform: scale(1);
+    }}
+
+    /* Hover effect */
+    .feeling-item:hover .feeling-emoji {{
+    opacity: 1;
+    filter: grayscale(0);
+    transform: scale(1.3);
+    }}
+
+    .feeling-item:hover {{
+    background-color: rgba(255, 255, 255, 0.6);
+    }}
+
+    /* ACTIVE STATE - This overrides hover when clicked */
+    .feeling-item.active .feeling-emoji {{
+    opacity: 1;
+    filter: grayscale(0);
+    transform: scale(1.4);
+    }}
+
+    .feeling-item.active {{
+    background-color: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 12px rgba(2, 136, 209, 0.2);
+    border: 2px solid #0288d1;
+    }}
+
+    /* Important: This prevents hover from overriding active state */
+    .feeling-item.active:hover .feeling-emoji {{
+    transform: scale(1.4); /* Same as active, no hover effect */
+    }}
+
+    .feeling-label {{
+    font-size: 1rem;
+    color: #01579b;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    }}
+
+    .feeling-item:hover .feeling-label {{
+    color: #0288d1;
+    font-weight: bold;
+    }}
+
+    /* Active label style */
+    .feeling-item.active .feeling-label,
+    .feeling-item.active:hover .feeling-label {{
+    color: #0288d1;
+    font-weight: bold;
+    }}
+    
+    /* Contact Section */
+    .contact-section {{
+      margin: 30px 0;
+      padding: 20px;
+      background: linear-gradient(to right, #0288d1, #03a9f4);
+      border-radius: 15px;
+      color: white;
+      box-shadow: 0 4px 15px rgba(2, 136, 209, 0.3);
+    }}
+    
+    .contact-text {{
+      font-size: 1.2rem;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }}
+    
+    .contact-email {{
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #ffeb3b;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      padding: 5px 15px;
+      border-radius: 5px;
+      display: inline-block;
+    }}
+    
+    .contact-email:hover {{
+      background-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }}
+    
+    /* Copyright Section */
+    .copyright-section {{
+      margin-top: 20px;
+      padding: 15px;
+      background-color: rgba(255, 255, 255, 0.7);
+      border-radius: 10px;
+      border-top: 3px solid #0288d1;
+    }}
+    
+    .copyright-text {{
+      color: #666;
+      font-size: 0.9rem;
+      margin: 0;
+    }}
+    
+    .copyright-name {{
+      color: #0288d1;
+      font-weight: bold;
+    }}
+    
+    /* Footer fixed sections */
+    .footer-sections {{
+      position: relative;
+      margin-top: 40px;
+    }}
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {{
+      .feelings-container {{
+        gap: 15px;
+      }}
+      
+      .feeling-emoji {{
+        font-size: 2.5rem;
+      }}
+      
+      .feeling-label {{
+        font-size: 0.9rem;
+      }}
+      
+      .contact-text {{
+        font-size: 1rem;
+      }}
+      
+      .contact-email {{
+        font-size: 1.1rem;
+      }}
+    }}
+    
+    @media (max-width: 480px) {{
+      .feelings-container {{
+        gap: 10px;
+      }}
+      
+      .feeling-emoji {{
+        font-size: 2rem;
+      }}
+      
+      .feeling-item {{
+        padding: 5px;
+      }}
   </style>
 </head>
 <body>
@@ -1727,18 +1910,60 @@ class AnimalLearningGameGenerator:
     <!-- <-- المحادثات -->
     {dialogues_html}
 
-    <hr>
-
-    <hr>
-
     <!-- Reading Passages -->
     <div class="passages-container">
       {reading_passages_html}
     </div>
 
+    <hr>
+    <hr>
+
     <!-- الأسئلة -->
     <div class="questions-container">
       {questions_html}
+    </div>
+
+    <!-- Feelings Feedback Section -->
+    <div class="feelings-section">
+    <h3 class="feelings-title">كيف تشعر بعد الاختبار؟</h3>
+    <div class="feelings-container">
+        <div class="feeling-item" data-feeling="frustrated">
+        <span class="feeling-emoji">😫</span>
+        <span class="feeling-label">محبط</span>
+        </div>
+        <div class="feeling-item" data-feeling="neutral">
+        <span class="feeling-emoji">😐</span>
+        <span class="feeling-label">عادي</span>
+        </div>
+        <div class="feeling-item" data-feeling="happy">
+        <span class="feeling-emoji">😊</span>
+        <span class="feeling-label">سعيد</span>
+        </div>
+        <div class="feeling-item" data-feeling="excited">
+        <span class="feeling-emoji">🤩</span>
+        <span class="feeling-label">متحمس</span>
+        </div>
+        <div class="feeling-item" data-feeling="proud">
+        <span class="feeling-emoji">😎</span>
+        <span class="feeling-label">فخور بنفسي</span>
+        </div>
+    </div>
+    </div>
+
+    <!-- Contact Section -->
+    <div class="contact-section">
+      <p class="contact-text">للتواصل أو لمزيد من المعلومات:</p>
+      <a href="mailto:a.hossam.contact@gmail.com" class="contact-email">
+        a.hossam.contact@gmail.com
+      </a>
+    </div>
+
+    <!-- Copyright Section -->
+    <div class="copyright-section">
+      <p class="copyright-text">
+        تم تطوير هذا التطبيق التعليمي بواسطة <span class="copyright-name"> Ahmad Hossam</span><br>
+        جميع الحقوق محفوظة © 2026 - تصميم وتطوير تعليمي
+      </p>
     </div>
   </div>
 
@@ -1984,6 +2209,26 @@ class AnimalLearningGameGenerator:
     
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', createPassagesHandlers);
+
+    // Feelings Section Functionality
+    const feelingItems = document.querySelectorAll('.feeling-item');
+
+    feelingItems.forEach(item => {{
+        item.addEventListener('click', function() {{
+            // Remove active class from all items
+            feelingItems.forEach(i => {{
+                i.classList.remove('active');
+            }});
+            
+            // Add active class to clicked item
+            this.classList.add('active');
+            const selectedFeeling = this.dataset.feeling;
+            
+            // Optional: You can save this selection somewhere
+            console.log('Selected feeling:', selectedFeeling);
+        }});
+    }});
+
   </script>
 </body>
 </html>
