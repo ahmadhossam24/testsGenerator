@@ -80,6 +80,7 @@ class AnimalLearningGameGenerator:
         
         # Bind right-click event to all entry widgets
         self.root.bind_class("TEntry", "<Button-3>", self.show_context_menu)
+        self.root.bind_class("Text", "<Button-3>", self.show_context_menu)
         
     def show_context_menu(self, event):
         # Store the widget that was right-clicked
@@ -784,7 +785,7 @@ class AnimalLearningGameGenerator:
                     variable=correct_choice_var,
                     value=choice_index,
                     command=lambda: question_data.update({
-                        "correct_choice_index": correct_choice_var.get()
+                        "correct_choice_index": correct_choice_var.get()-1
                     })
                 )
                 radio.pack(side="left")
@@ -1002,8 +1003,7 @@ class AnimalLearningGameGenerator:
                     # Create dropdown for choices
                     options_html = '<option value="">اختر إجابة</option>'
                     for idx, choice in enumerate(question["choices"]):
-                        selected = "selected" if idx == question["correct_choice_index"] else ""
-                        options_html += f'<option value="{idx}" {selected}>{choice}</option>'
+                        options_html += f'<option value="{idx}">{choice["value"]}</option>'
                     
                     dropdown_html = f'''
                     <select class="passage-dropdown" data-correct-index="{question["correct_choice_index"]}">
@@ -1017,8 +1017,7 @@ class AnimalLearningGameGenerator:
             if question["blank_after_word"] >= len(words):
                 options_html = '<option value="">اختر إجابة</option>'
                 for idx, choice in enumerate(question["choices"]):
-                    selected = "selected" if idx == question["correct_choice_index"] else ""
-                    options_html += f'<option value="{idx}" {selected}>{choice}</option>'
+                    options_html += f'<option value="{idx}">{choice["value"]}</option>'
                 
                 dropdown_html = f'''
                 <select class="passage-dropdown" data-correct-index="{question["correct_choice_index"]}">
@@ -1220,9 +1219,11 @@ class AnimalLearningGameGenerator:
             for i, passage in enumerate(self.reading_passages):
                 reading_passages_html += self.generate_reading_passage_html(passage, i)
             
-            # Prepare audio files
-            success_audio_base64 = self.encode_audio_to_base64("success.mp3")
-            fail_audio_base64 = self.encode_audio_to_base64("fail.mp3")
+            # Prepare fail audio file
+            fail_audio_base64 = self.encode_audio_to_base64("failOne.mp3")
+
+            # Prepare cheer audio file
+            cheer_audio_base64 = self.encode_audio_to_base64("cheer.mp3")
             
             # Read HTML template
             html_template = """
@@ -1710,8 +1711,8 @@ class AnimalLearningGameGenerator:
   </style>
 </head>
 <body>
-  <audio id="successAudio" preload="auto">
-    <source src="{success_audio_base64}" type="audio/mpeg">
+  <audio id="cheerAudio" preload="auto">
+    <source src="{cheer_audio_base64}" type="audio/mpeg">
   </audio>
   <audio id="failAudio" preload="auto">
     <source src="{fail_audio_base64}" type="audio/mpeg">
@@ -1940,7 +1941,7 @@ class AnimalLearningGameGenerator:
                 if (allCorrect) {{
                     overallFeedback.classList.add('success');
                     overallFeedback.innerHTML = 'جميع الإجابات صحيحة 🎉';
-                    playAudio('successAudio');
+                    playAudio('cheerAudio');
                 }} else {{
                     overallFeedback.classList.add('fail');
                     overallFeedback.innerHTML = 'يوجد إجابات خاطئة ⛔';
@@ -1972,15 +1973,7 @@ class AnimalLearningGameGenerator:
                     feedback.classList.remove('correct', 'incorrect');
                     feedback.textContent = '';
                     
-                    if (selectedValue === correctIndex) {{
-                        this.classList.add('correct');
-                        feedback.classList.add('correct');
-                        feedback.innerHTML = '<span class="correct-symbol">✅</span> الإجابة صحيحة';
-                    }} else {{
-                        this.classList.add('incorrect');
-                        feedback.classList.add('incorrect');
-                        feedback.innerHTML = '<span class="incorrect-symbol">❌</span> الإجابة خاطئة';
-                    }}
+                    
                 }});
             }});
             
@@ -1998,9 +1991,9 @@ class AnimalLearningGameGenerator:
             
             # Format the HTML
             html_content = html_template.format(
-                successAudioEncoded=successAudioEncoded,
-                success_audio_base64=success_audio_base64,
                 fail_audio_base64=fail_audio_base64,
+                cheer_audio_base64=cheer_audio_base64,
+                successAudioEncoded=successAudioEncoded,
                 animals_html=animals_html,
                 dialogues_html=dialogues_html,
                 reading_passages_html=reading_passages_html,
