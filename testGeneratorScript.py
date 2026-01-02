@@ -985,10 +985,85 @@ class AnimalLearningGameGenerator:
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save configuration: {str(e)}")
+
+    def generate_reading_passage_html(self, passage, passage_index):
+        """Generate HTML for a reading passage with questions."""
+        
+        # Generate questions HTML
+        questions_html = ""
+        for q_index, question in enumerate(passage["questions"]):
+            # Split sentence into words
+            words = question["sentence"].split()
+            
+            # Create sentence with dropdown at the specified position
+            sentence_parts = []
+            for i, word in enumerate(words):
+                if i == question["blank_after_word"]:
+                    # Create dropdown for choices
+                    options_html = '<option value="">اختر إجابة</option>'
+                    for idx, choice in enumerate(question["choices"]):
+                        selected = "selected" if idx == question["correct_choice_index"] else ""
+                        options_html += f'<option value="{idx}" {selected}>{choice}</option>'
+                    
+                    dropdown_html = f'''
+                    <select class="passage-dropdown" data-correct-index="{question["correct_choice_index"]}">
+                        {options_html}
+                    </select>
+                    '''
+                    sentence_parts.append(dropdown_html)
+                sentence_parts.append(f'<span>{word}</span>')
+            
+            # Add dropdown at the end if blank_after_word is after last word
+            if question["blank_after_word"] >= len(words):
+                options_html = '<option value="">اختر إجابة</option>'
+                for idx, choice in enumerate(question["choices"]):
+                    selected = "selected" if idx == question["correct_choice_index"] else ""
+                    options_html += f'<option value="{idx}" {selected}>{choice}</option>'
+                
+                dropdown_html = f'''
+                <select class="passage-dropdown" data-correct-index="{question["correct_choice_index"]}">
+                    {options_html}
+                </select>
+                '''
+                sentence_parts.append(dropdown_html)
+            
+            questions_html += f'''
+            <div class="passage-question" data-question-index="{q_index}">
+                <div class="passage-sentence">
+                    {" ".join(sentence_parts)}
+                </div>
+                <div class="passage-feedback"></div>
+            </div>
+            '''
+        
+        # Generate complete passage HTML
+        passage_html = f'''
+        <div class="passage-item" data-passage-index="{passage_index}">
+            <h3 class="passage-title">{passage["title"]}</h3>
+            <div class="passage-text">{passage["text"]}</div>
+            
+            <div class="passage-questions">
+                {questions_html}
+            </div>
+            
+            <button class="passage-show-results">عرض النتائج</button>
+            <div class="passage-overall-feedback"></div>
+        </div>
+        '''
+        
+        return passage_html
+    def encode_audio_to_base64(self, audio_file_path):
+        """Encode audio file to base64 for embedding in HTML."""
+        try:
+            with open(audio_file_path, "rb") as audio_file:
+                audio_data = audio_file.read()
+                audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+                return f"data:audio/mpeg;base64,{audio_base64}"
+        except FileNotFoundError:
+            # Return empty if file doesn't exist
+            return ""
             
     def generate_html(self):
-        print(self.dialouges)
-        return
         try:
             # Prepare animals HTML
             animals_html = ""
@@ -1139,6 +1214,15 @@ class AnimalLearningGameGenerator:
               Your browser does not support the audio element.
             </audio>
             """
+
+            # Prepare reading passages HTML
+            reading_passages_html = ""
+            for i, passage in enumerate(self.reading_passages):
+                reading_passages_html += self.generate_reading_passage_html(passage, i)
+            
+            # Prepare audio files
+            success_audio_base64 = self.encode_audio_to_base64("success.mp3")
+            fail_audio_base64 = self.encode_audio_to_base64("fail.mp3")
             
             # Read HTML template
             html_template = """
@@ -1466,9 +1550,172 @@ class AnimalLearningGameGenerator:
         font-size: 1rem;
       }}
     }}
+
+    /* Reading Passages Styles */
+    .passages-container {{
+      margin: 30px 0;
+    }}
+    
+    .passage-item {{
+      background: #ffffff;
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      border: 2px solid #e3f2fd;
+    }}
+    
+    .passage-title {{
+      color: #01579b;
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #0288d1;
+    }}
+    
+    .passage-text {{
+      text-align: justify;
+      line-height: 1.8;
+      font-size: 1.1rem;
+      margin-bottom: 25px;
+      color: #333;
+      padding: 15px;
+      background: #f8fdff;
+      border-radius: 10px;
+      border-right: 3px solid #0288d1;
+    }}
+    
+    .passage-question {{
+      margin: 20px 0;
+      padding: 15px;
+      background: #f5f9ff;
+      border-radius: 10px;
+      border: 1px solid #e1e8f0;
+    }}
+    
+    .passage-sentence {{
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      line-height: 1.6;
+      color: #2c3e50;
+    }}
+    
+    .passage-dropdown {{
+      padding: 8px 15px;
+      border: 2px solid #bdc3c7;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: white;
+      margin: 0 5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 120px;
+    }}
+    
+    .passage-dropdown:hover {{
+      border-color: #3498db;
+    }}
+    
+    .passage-dropdown.correct {{
+      background-color: #d4edda;
+      border-color: #28a745;
+      color: #155724;
+    }}
+    
+    .passage-dropdown.incorrect {{
+      background-color: #f8d7da;
+      border-color: #dc3545;
+      color: #721c24;
+    }}
+    
+    .passage-feedback {{
+      margin-top: 10px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      padding: 8px 12px;
+      border-radius: 6px;
+      display: inline-block;
+    }}
+    
+    .passage-feedback.correct {{
+      color: #155724;
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+    }}
+    
+    .passage-feedback.incorrect {{
+      color: #721c24;
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+    }}
+    
+    .passage-show-results {{
+      background: linear-gradient(to right, #3498db, #2980b9);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      border-radius: 25px;
+      cursor: pointer;
+      margin: 20px 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+    }}
+    
+    .passage-show-results:hover:not(:disabled) {{
+      background: linear-gradient(to right, #2980b9, #1c6ea4);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(52, 152, 219, 0.4);
+    }}
+    
+    .passage-show-results:disabled {{
+      background: #95a5a6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }}
+    
+    .passage-overall-feedback {{
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      display: none;
+    }}
+    
+    .passage-overall-feedback.success {{
+      background-color: #d4edda;
+      color: #155724;
+      border: 2px solid #28a745;
+      display: block;
+    }}
+    
+    .passage-overall-feedback.fail {{
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 2px solid #dc3545;
+      display: block;
+    }}
+    
+    .correct-symbol {{
+      color: #28a745;
+      margin-right: 5px;
+    }}
+    
+    .incorrect-symbol {{
+      color: #dc3545;
+      margin-right: 5px;
+    }}
   </style>
 </head>
 <body>
+  <audio id="successAudio" preload="auto">
+    <source src="{success_audio_base64}" type="audio/mpeg">
+  </audio>
+  <audio id="failAudio" preload="auto">
+    <source src="{fail_audio_base64}" type="audio/mpeg">
+  </audio>
   {successAudioEncoded}
   <div class="container">
     <h1>Learning Test</h1>
@@ -1482,6 +1729,11 @@ class AnimalLearningGameGenerator:
     <hr>
 
     <hr>
+
+    <!-- Reading Passages -->
+    <div class="passages-container">
+      {reading_passages_html}
+    </div>
 
     <!-- الأسئلة -->
     <div class="questions-container">
@@ -1640,6 +1892,105 @@ class AnimalLearningGameGenerator:
         }}
       }}
     }}
+
+    // Reading Passages Functions
+    function createPassagesHandlers() {{
+        const passages = document.querySelectorAll('.passage-item');
+        
+        passages.forEach((passage, passageIndex) => {{
+            const showResultsBtn = passage.querySelector('.passage-show-results');
+            const overallFeedback = passage.querySelector('.passage-overall-feedback');
+            const dropdowns = passage.querySelectorAll('.passage-dropdown');
+            
+            // Store original state
+            dropdowns.forEach(dropdown => {{
+                dropdown.dataset.originalValue = dropdown.value;
+            }});
+            
+            // Check results function
+            function checkPassageResults() {{
+                let allCorrect = true;
+                const questions = passage.querySelectorAll('.passage-question');
+                
+                questions.forEach((question, qIndex) => {{
+                    const dropdown = question.querySelector('.passage-dropdown');
+                    const feedback = question.querySelector('.passage-feedback');
+                    const correctIndex = parseInt(dropdown.dataset.correctIndex);
+                    const selectedValue = parseInt(dropdown.value);
+                    
+                    // Reset styles
+                    dropdown.classList.remove('correct', 'incorrect');
+                    feedback.classList.remove('correct', 'incorrect');
+                    feedback.textContent = '';
+                    
+                    if (selectedValue === correctIndex) {{
+                        dropdown.classList.add('correct');
+                        feedback.classList.add('correct');
+                        feedback.innerHTML = '<span class="correct-symbol">✅</span> الإجابة صحيحة';
+                    }} else {{
+                        dropdown.classList.add('incorrect');
+                        feedback.classList.add('incorrect');
+                        feedback.innerHTML = '<span class="incorrect-symbol">❌</span> الإجابة خاطئة';
+                        allCorrect = false;
+                    }}
+                }});
+                
+                // Show overall feedback
+                overallFeedback.classList.remove('success', 'fail');
+                if (allCorrect) {{
+                    overallFeedback.classList.add('success');
+                    overallFeedback.innerHTML = 'جميع الإجابات صحيحة 🎉';
+                    playAudio('successAudio');
+                }} else {{
+                    overallFeedback.classList.add('fail');
+                    overallFeedback.innerHTML = 'يوجد إجابات خاطئة ⛔';
+                    playAudio('failAudio');
+                }}
+                
+                // Disable the button
+                showResultsBtn.disabled = true;
+            }}
+            
+            // Reset overall feedback when any dropdown changes
+            dropdowns.forEach(dropdown => {{
+                dropdown.addEventListener('change', function() {{
+                    // Reset overall feedback
+                    overallFeedback.classList.remove('success', 'fail');
+                    overallFeedback.textContent = '';
+                    
+                    // Re-enable the button
+                    showResultsBtn.disabled = false;
+                    
+                    // Auto-check the changed question
+                    const question = this.closest('.passage-question');
+                    const feedback = question.querySelector('.passage-feedback');
+                    const correctIndex = parseInt(this.dataset.correctIndex);
+                    const selectedValue = parseInt(this.value);
+                    
+                    // Reset styles
+                    this.classList.remove('correct', 'incorrect');
+                    feedback.classList.remove('correct', 'incorrect');
+                    feedback.textContent = '';
+                    
+                    if (selectedValue === correctIndex) {{
+                        this.classList.add('correct');
+                        feedback.classList.add('correct');
+                        feedback.innerHTML = '<span class="correct-symbol">✅</span> الإجابة صحيحة';
+                    }} else {{
+                        this.classList.add('incorrect');
+                        feedback.classList.add('incorrect');
+                        feedback.innerHTML = '<span class="incorrect-symbol">❌</span> الإجابة خاطئة';
+                    }}
+                }});
+            }});
+            
+            // Attach event listener to show results button
+            showResultsBtn.addEventListener('click', checkPassageResults);
+        }});
+    }}
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', createPassagesHandlers);
   </script>
 </body>
 </html>
@@ -1648,8 +1999,11 @@ class AnimalLearningGameGenerator:
             # Format the HTML
             html_content = html_template.format(
                 successAudioEncoded=successAudioEncoded,
+                success_audio_base64=success_audio_base64,
+                fail_audio_base64=fail_audio_base64,
                 animals_html=animals_html,
                 dialogues_html=dialogues_html,
+                reading_passages_html=reading_passages_html,
                 questions_html=questions_html,
                 correct_answers_js=correct_answers_js,
                 correct_answer_text_js=correct_answer_text_js
