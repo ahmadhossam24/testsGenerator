@@ -895,10 +895,6 @@ class AnimalLearningGameGenerator:
         self.animals_per_row_var.set("3")
         self.output_file_var.set("animal_game.html")
         
-        # Add default frames
-        self.add_animal_frame()
-        self.add_question_frame()
-        
     def load_config(self):
         filename = filedialog.askopenfilename(
             title="Load Configuration",
@@ -930,13 +926,13 @@ class AnimalLearningGameGenerator:
                 question_frame.image_url.insert(0, question_data.get('image_url', '')) 
                 question_frame.question_text.insert(0, question_data.get('text', ''))
                 
-                # Clear default answers
-                for entry in question_frame.answer_entries[:]:
-                    question_frame.remove_answer_row(
-                        question_frame.radio_buttons[question_frame.answer_entries.index(entry)],
-                        entry,
-                        None  # Button reference not stored, but it's OK for initial load
-                    )
+                # # Clear default answers - this part gives error 
+                # for entry in question_frame.answer_entries[:]:
+                #     question_frame.remove_answer_row(
+                #         question_frame.radio_buttons[question_frame.answer_entries.index(entry)],
+                #         entry,
+                #         None  # Button reference not stored, but it's OK for initial load
+                #     )
                 
                 # Add answers from config
                 answers = question_data.get('answers', [])
@@ -1471,6 +1467,11 @@ class AnimalLearningGameGenerator:
     .dialogue-text {{ font-size: 1rem; color: #01579b; }}
     @media (max-width: 600px) {{
     .dialogue-thumb img {{ width: 60px; height: 60px; }}
+    .main-line {{max-width:90%;}}
+    .main-line.expanded{{max-width:90%;}}
+    .dialogue-translation {{max-width:90%;align-self:center;}}
+    .dialogue-line-wrapper {{flex-direction:column;}}
+
     }}
     
     /* تحسين الأسئلة والخيارات */
@@ -1947,34 +1948,34 @@ class AnimalLearningGameGenerator:
 
     <!-- Feelings Feedback Section -->
     <div class="feelings-section">
-    <h3 class="feelings-title">كيف تشعر بعد الاختبار؟</h3>
+    <h3 class="feelings-title">How do you feel?</h3>
     <div class="feelings-container">
         <div class="feeling-item" data-feeling="frustrated">
         <span class="feeling-emoji">😫</span>
-        <span class="feeling-label">محبط</span>
+        <span class="feeling-label">Frustrated</span>
         </div>
         <div class="feeling-item" data-feeling="neutral">
         <span class="feeling-emoji">😐</span>
-        <span class="feeling-label">عادي</span>
+        <span class="feeling-label">Neutral</span>
         </div>
         <div class="feeling-item" data-feeling="happy">
         <span class="feeling-emoji">😊</span>
-        <span class="feeling-label">سعيد</span>
+        <span class="feeling-label">Happy</span>
         </div>
         <div class="feeling-item" data-feeling="excited">
         <span class="feeling-emoji">🤩</span>
-        <span class="feeling-label">متحمس</span>
+        <span class="feeling-label">Excited</span>
         </div>
         <div class="feeling-item" data-feeling="proud">
         <span class="feeling-emoji">😎</span>
-        <span class="feeling-label">فخور بنفسي</span>
+        <span class="feeling-label"> Proud </span>
         </div>
     </div>
     </div>
 
     <!-- Contact Section -->
     <div class="contact-section">
-      <p class="contact-text">للتواصل أو لمزيد من المعلومات:</p>
+      <p class="contact-text">For contact or more information:</p>
       <a href="mailto:a.hossam.contact@gmail.com" class="contact-email">
         a.hossam.contact@gmail.com
       </a>
@@ -1983,8 +1984,9 @@ class AnimalLearningGameGenerator:
     <!-- Copyright Section -->
     <div class="copyright-section">
       <p class="copyright-text">
-        تم تطوير هذا التطبيق التعليمي بواسطة <span class="copyright-name"> Ahmad Hossam</span><br>
-        جميع الحقوق محفوظة © 2026 - تصميم وتطوير تعليمي
+       This educational application was developed by <span class="copyright-name"> Ahmad Hossam</span><br>
+All rights reserved © 2026 – Educational Design and Development 
+      
       </p>
     </div>
   </div>
