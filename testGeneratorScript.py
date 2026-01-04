@@ -871,7 +871,26 @@ class AnimalLearningGameGenerator:
         for question in self.questions:
             question.destroy()
         self.questions = []
-        
+        #clear dialogues data and ui widgets
+        self.dialouges = []
+        # Destroy all widgets inside the dialouges_container frame
+        for widget in self.dialouges_container.winfo_children():
+            widget.destroy()
+        # Optional: Update the scroll region
+        canvas = self.dialouges_container.master  # Get the parent canvas
+        if canvas:
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        # clear reading passages data and ui widgets
+        self.reading_passages = []
+        # Destroy all widgets inside the reading_passages_container frame
+        for widget in self.reading_passages_container.winfo_children():
+            widget.destroy()
+        # Optional: Update the scroll region
+        canvas = self.reading_passages_container.master  # Get the parent canvas
+        if canvas:
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
         # Reset settings
         self.animals_per_row_var.set("3")
         self.output_file_var.set("animal_game.html")
@@ -965,6 +984,7 @@ class AnimalLearningGameGenerator:
                 correct_index = int(question.correct_answer_var.get()) if question.correct_answer_var.get() else 0
                 
                 questions_data.append({
+                    'image_url': question.image_url.get(),
                     'text': question.question_text.get(),
                     'answers': answers,
                     'correct_index': correct_index
@@ -974,6 +994,8 @@ class AnimalLearningGameGenerator:
             config = {
                 'animals': animals_data,
                 'questions': questions_data,
+                'dialogues':self.dialouges,
+                'reading_passages':self.reading_passages,
                 'animals_per_row': int(self.animals_per_row_var.get()),
                 'output_file': self.output_file_var.get()
             }
