@@ -1265,7 +1265,7 @@ class AnimalLearningGameGenerator:
             correct_choice_var = tk.IntVar(value=-1)
             # ---- Add Choice ----
             def add_loaded_choices(choice,choice_order):
-                choice_data = {"value": choice}
+                choice_data = choice # comes in the shape of {"value":"<choice data>"}
                 question_data["choices"].append(choice_data)
 
                 choice_frame = ttk.Frame(choices_container)
@@ -1873,7 +1873,7 @@ class AnimalLearningGameGenerator:
     .dialogue-head {{
         display:flex;
         justify-content:space-between;
-        margin-bottom:3px;
+        margin-bottom:18px;
     }}
 
     .autoplay-dialogue-button{{
@@ -1943,6 +1943,7 @@ class AnimalLearningGameGenerator:
 
     /* translation */
     .show-translation-button{{
+        width:fit-content;
         height:fit-content;
         border-radius:5px;
         cursor:pointer;
@@ -1971,7 +1972,7 @@ class AnimalLearningGameGenerator:
     }}
 
     .dialogue {{ margin: 20px 0; text-align: right; }}
-    .dialogue-title {{ margin: 0 0 8px 0; color: #0277bd; }}
+    .dialogue-title {{ margin: 0 0 0px 0; color: #0277bd;align-self:center }}
     .dialogue-container {{ display: flex; flex-direction: column; gap: 8px; }}
 
     .dialogue-line {{
@@ -2015,10 +2016,13 @@ class AnimalLearningGameGenerator:
     .dialogue-text {{ font-size: 1rem; color: #01579b; }}
     @media (max-width: 600px) {{
     .dialogue-thumb img {{ width: 60px; height: 60px; }}
-    .main-line {{max-width:90%;}}
-    .main-line.expanded{{max-width:90%;}}
-    .dialogue-translation {{max-width:90%;align-self:center;}}
-    .dialogue-line-wrapper {{flex-direction:column;}}
+    .main-line {{max-width:80%;}}
+    .main-line.expanded {{width:80%;}}
+    .dialogue-translation {{max-width:80%;align-self:center;}}
+    .dialogue-line-wrapper {{flex-direction:column;margin-bottom:6px;}}
+    .dialogue-line-wrapper.left  {{ flex-direction: column; align-items:self-end}}
+    .dialogue-line-wrapper.right {{ flex-direction: column; align-items:self-start}}
+    .dialogue-head {{margin-bottom:30px}}
 
     }}
     
@@ -2496,7 +2500,7 @@ class AnimalLearningGameGenerator:
 
     <!-- Feelings Feedback Section -->
     <div class="feelings-section">
-    <h3 class="feelings-title">How do you feel?</h3>
+    <h3 class="feelings-title">How do you feel ?</h3>
     <div class="feelings-container">
         <div class="feeling-item" data-feeling="frustrated">
         <span class="feeling-emoji">😫</span>
