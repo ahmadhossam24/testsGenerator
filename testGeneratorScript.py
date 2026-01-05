@@ -649,6 +649,241 @@ class AnimalLearningGameGenerator:
         # Add first line by default
         add_line()
 
+    def add_dialogue_frame_loaded_config(self,loaded_title,loaded_lines):
+        dialogue_data = {
+            "title":loaded_title,
+            "lines": []
+        }
+        self.dialouges.append(dialogue_data)
+
+        # ================= Dialogue Frame =================
+        dialogue_frame = ttk.LabelFrame(
+            self.dialouges_container,
+            text=f"Dialogue {len(self.dialouges)}",
+            padding=10
+        )
+        dialogue_frame.pack(fill="x", pady=10, padx=5)
+
+        # ================= Dialogue Title =================
+        ttk.Label(dialogue_frame, text="Dialogue Title:").pack(anchor="w", padx=5)
+        title_entry = ttk.Entry(dialogue_frame, width=40)
+        title_entry.pack(fill="x", padx=5, pady=(0, 10))
+        title_entry.bind(
+            "<KeyRelease>",
+            lambda e: dialogue_data.update({"title": title_entry.get()})
+        )
+        # populate with loaded title
+        title_entry.insert(0, loaded_title)
+
+        # ================= Remove Dialogue =================
+        def remove_dialogue():
+            self.dialouges.remove(dialogue_data)
+            dialogue_frame.destroy()
+
+        ttk.Button(
+            dialogue_frame,
+            text="Delete Dialogue",
+            command=remove_dialogue
+        ).pack(anchor="e", pady=5)
+
+        # ================= Lines Container =================
+        lines_container = ttk.Frame(dialogue_frame)
+        lines_container.pack(fill="x")
+
+        # ================= duplicate Line =================
+        def duplicate_line(image_url,position,text,translation,audio):
+
+            line_data = {
+                "image": image_url,
+                "position": position,
+                "text": text,
+                "translation":translation,
+                "audio": audio
+            }
+            dialogue_data["lines"].append(line_data)
+            print("first print")
+            line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
+            line_frame.pack(fill="x", pady=5)
+            print("sec print")
+            # ---- Image ----
+            ttk.Label(line_frame, text="Image URL:").grid(row=0, column=0, sticky="w")
+            image_entry = ttk.Entry(line_frame, width=40)
+            image_entry.grid(row=0, column=1, padx=5)
+            image_entry.bind(
+                "<KeyRelease>",
+                lambda e: line_data.update({"image": image_entry.get()})
+            )
+            print("thi print")
+            # ---- Position ----
+            ttk.Label(line_frame, text="Position:").grid(row=0, column=2, padx=5)
+            position_var = tk.StringVar(value="left")
+            position_menu = ttk.Combobox(
+                line_frame,
+                textvariable=position_var,
+                values=["left", "right"],
+                state="readonly",
+                width=7
+            )
+            position_menu.grid(row=0, column=3)
+            position_var.trace_add(
+                "write",
+                lambda *args: line_data.update({"position": position_var.get()})
+            )
+            print("four print")
+            # ---- Text ----
+            ttk.Label(line_frame, text="Dialogue Text:").grid(row=1, column=0, sticky="nw")
+            text_box = tk.Text(line_frame, height=3, width=60)
+            text_box.grid(row=1, column=1, columnspan=3, pady=5)
+
+            def update_text(event):
+                line_data["text"] = text_box.get("1.0", "end").strip()
+
+            text_box.bind("<KeyRelease>", update_text)
+            print("fifth print")
+            # ---- Text translation ----
+            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=2, column=0, sticky="nw")
+            text_translation_box = tk.Text(line_frame, height=3, width=60)
+            text_translation_box.grid(row=2, column=1, columnspan=3, pady=5)
+
+            def update_translation(event):
+                line_data["translation"] = text_translation_box.get("1.0", "end").strip()
+
+            text_translation_box.bind("<KeyRelease>", update_translation)
+            print("sixth print")
+            # ---- Audio ----
+            ttk.Label(line_frame, text="Audio:").grid(row=3, column=0, sticky="w")
+            audio_entry = ttk.Entry(line_frame, width=40)
+            audio_entry.grid(row=3, column=1, padx=5)
+
+            ttk.Button(
+                line_frame,
+                text="Browse",
+                command=lambda: (
+                    self.browse_audio(audio_entry),
+                    line_data.update({"audio": audio_entry.get()})
+                )
+            ).grid(row=3, column=2)
+            print("seventh print")
+            # ---- Delete Line ----
+            def remove_line():
+                dialogue_data["lines"].remove(line_data)
+                line_frame.destroy()
+
+            ttk.Button(
+                line_frame,
+                text="Delete Line",
+                command=remove_line
+            ).grid(row=4, column=3, padx=5)
+            print("eight print")
+            # NOW insert the values
+            image_entry.insert(0, image_url)
+            position_var.set(position)  
+            text_box.insert("1.0", text) 
+            text_translation_box.insert("1.0", translation)
+            audio_entry.insert(0, audio)
+            print("ninth print")
+            ttk.Button(line_frame, text="Duplicate", 
+            command=lambda: duplicate_line(image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
+        .grid(row=4, column=2, sticky='w', pady=5) 
+
+        # ================= Add Line =================
+        def add_line():
+            line_data = {
+                "image": "",
+                "position": "left",
+                "text": "",
+                "translation":"",
+                "audio": ""
+            }
+            dialogue_data["lines"].append(line_data)
+
+            line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
+            line_frame.pack(fill="x", pady=5)
+
+            # ---- Image ----
+            ttk.Label(line_frame, text="Image URL:").grid(row=0, column=0, sticky="w")
+            image_entry = ttk.Entry(line_frame, width=40)
+            image_entry.grid(row=0, column=1, padx=5)
+            image_entry.bind(
+                "<KeyRelease>",
+                lambda e: line_data.update({"image": image_entry.get()})
+            )
+
+            # ---- Position ----
+            ttk.Label(line_frame, text="Position:").grid(row=0, column=2, padx=5)
+            position_var = tk.StringVar(value="left")
+            position_menu = ttk.Combobox(
+                line_frame,
+                textvariable=position_var,
+                values=["left", "right"],
+                state="readonly",
+                width=7
+            )
+            position_menu.grid(row=0, column=3)
+            position_var.trace_add(
+                "write",
+                lambda *args: line_data.update({"position": position_var.get()})
+            )
+
+            # ---- Text ----
+            ttk.Label(line_frame, text="Dialogue Text:").grid(row=1, column=0, sticky="nw")
+            text_box = tk.Text(line_frame, height=3, width=60)
+            text_box.grid(row=1, column=1, columnspan=3, pady=5)
+
+            def update_text(event):
+                line_data["text"] = text_box.get("1.0", "end").strip()
+
+            text_box.bind("<KeyRelease>", update_text)
+
+            # ---- Text translation ----
+            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=2, column=0, sticky="nw")
+            text_translation_box = tk.Text(line_frame, height=3, width=60)
+            text_translation_box.grid(row=2, column=1, columnspan=3, pady=5)
+
+            def update_translation(event):
+                line_data["translation"] = text_translation_box.get("1.0", "end").strip()
+
+            text_translation_box.bind("<KeyRelease>", update_translation)
+
+            # ---- Audio ----
+            ttk.Label(line_frame, text="Audio:").grid(row=3, column=0, sticky="w")
+            audio_entry = ttk.Entry(line_frame, width=40)
+            audio_entry.grid(row=3, column=1, padx=5)
+
+            ttk.Button(
+                line_frame,
+                text="Browse",
+                command=lambda: (
+                    self.browse_audio(audio_entry),
+                    line_data.update({"audio": audio_entry.get()})
+                )
+            ).grid(row=3, column=2)
+
+            # ---- Delete Line ----
+            def remove_line():
+                dialogue_data["lines"].remove(line_data)
+                line_frame.destroy()
+
+            ttk.Button(
+                line_frame,
+                text="Delete Line",
+                command=remove_line
+            ).grid(row=4, column=3, padx=5)
+
+            ttk.Button(line_frame, text="Duplicate", 
+            command=lambda: duplicate_line(image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
+        .grid(row=4, column=2, sticky='w', pady=5) 
+
+        # ================= Buttons =================
+        ttk.Button(
+            dialogue_frame,
+            text="Add Dialogue Line",
+            command=add_line
+        ).pack(pady=5)
+        for loaded_line in loaded_lines:
+            # Add loaded line using function duplicate line
+            duplicate_line(loaded_line["image"],loaded_line["position"],loaded_line["text"],loaded_line["translation"],loaded_line["audio"])
+
     def setup_reading_passages_section(self):
         # Add reading_passage button
         ttk.Button(self.reading_passages_frame, text="Add Dialogue", command=self.add_reading_passage_frame).pack(pady=5)
@@ -945,6 +1180,12 @@ class AnimalLearningGameGenerator:
                 # Set correct answer
                 if answers and 0 <= correct_index < len(answers):
                     question_frame.correct_answer_var.set(str(correct_index))
+
+            # load dialouges
+            for dialouge in config.get('dialogues',[]):
+                self.add_dialogue_frame_loaded_config(dialouge['title'],dialouge['lines'])
+
+            # load reading_passages
                     
             # Load settings
             self.animals_per_row_var.set(str(config.get('animals_per_row', 3)))
