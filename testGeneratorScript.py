@@ -701,10 +701,10 @@ class AnimalLearningGameGenerator:
                 "audio": audio
             }
             dialogue_data["lines"].append(line_data)
-            print("first print")
+            
             line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
             line_frame.pack(fill="x", pady=5)
-            print("sec print")
+            
             # ---- Image ----
             ttk.Label(line_frame, text="Image URL:").grid(row=0, column=0, sticky="w")
             image_entry = ttk.Entry(line_frame, width=40)
@@ -713,7 +713,7 @@ class AnimalLearningGameGenerator:
                 "<KeyRelease>",
                 lambda e: line_data.update({"image": image_entry.get()})
             )
-            print("thi print")
+            
             # ---- Position ----
             ttk.Label(line_frame, text="Position:").grid(row=0, column=2, padx=5)
             position_var = tk.StringVar(value="left")
@@ -729,7 +729,7 @@ class AnimalLearningGameGenerator:
                 "write",
                 lambda *args: line_data.update({"position": position_var.get()})
             )
-            print("four print")
+            
             # ---- Text ----
             ttk.Label(line_frame, text="Dialogue Text:").grid(row=1, column=0, sticky="nw")
             text_box = tk.Text(line_frame, height=3, width=60)
@@ -739,7 +739,7 @@ class AnimalLearningGameGenerator:
                 line_data["text"] = text_box.get("1.0", "end").strip()
 
             text_box.bind("<KeyRelease>", update_text)
-            print("fifth print")
+            
             # ---- Text translation ----
             ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=2, column=0, sticky="nw")
             text_translation_box = tk.Text(line_frame, height=3, width=60)
@@ -749,7 +749,7 @@ class AnimalLearningGameGenerator:
                 line_data["translation"] = text_translation_box.get("1.0", "end").strip()
 
             text_translation_box.bind("<KeyRelease>", update_translation)
-            print("sixth print")
+
             # ---- Audio ----
             ttk.Label(line_frame, text="Audio:").grid(row=3, column=0, sticky="w")
             audio_entry = ttk.Entry(line_frame, width=40)
@@ -763,7 +763,7 @@ class AnimalLearningGameGenerator:
                     line_data.update({"audio": audio_entry.get()})
                 )
             ).grid(row=3, column=2)
-            print("seventh print")
+            
             # ---- Delete Line ----
             def remove_line():
                 dialogue_data["lines"].remove(line_data)
@@ -774,14 +774,14 @@ class AnimalLearningGameGenerator:
                 text="Delete Line",
                 command=remove_line
             ).grid(row=4, column=3, padx=5)
-            print("eight print")
+            
             # NOW insert the values
             image_entry.insert(0, image_url)
             position_var.set(position)  
             text_box.insert("1.0", text) 
             text_translation_box.insert("1.0", translation)
             audio_entry.insert(0, audio)
-            print("ninth print")
+            
             ttk.Button(line_frame, text="Duplicate", 
             command=lambda: duplicate_line(image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
         .grid(row=4, column=2, sticky='w', pady=5) 
@@ -1073,6 +1073,312 @@ class AnimalLearningGameGenerator:
         # Add first question by default
         add_question()
 
+    def add_reading_passage_frame_loaded_config(self,title,text,questions):
+        passage_data = {
+            "title": title,
+            "text": text,
+            "questions": []
+        }
+        self.reading_passages.append(passage_data)
+
+        # ================= Passage Frame =================
+        passage_frame = ttk.LabelFrame(
+            self.reading_passages_container,
+            text=f"Reading Passage {len(self.reading_passages)}",
+            padding=10
+        )
+        passage_frame.pack(fill="x", pady=10, padx=5)
+
+        # ================= Remove Passage =================
+        def remove_passage():
+            self.reading_passages.remove(passage_data)
+            passage_frame.destroy()
+
+        ttk.Button(
+            passage_frame,
+            text="Delete Passage",
+            command=remove_passage
+        ).pack(anchor="e", pady=5)
+
+        # ================= Title =================
+        ttk.Label(passage_frame, text="Passage Title:").pack(anchor="w")
+        title_entry = ttk.Entry(passage_frame, width=60)
+        title_entry.pack(fill="x", pady=3)
+
+        title_entry.bind(
+            "<KeyRelease>",
+            lambda e: passage_data.update({"title": title_entry.get()})
+        )
+        title_entry.insert(0, title)
+
+        # ================= Passage Text =================
+        ttk.Label(passage_frame, text="Passage Text:").pack(anchor="w")
+        text_box = tk.Text(passage_frame, height=6)
+        text_box.pack(fill="x", pady=5)
+
+        def update_passage_text(event):
+            passage_data["text"] = text_box.get("1.0", "end").strip()
+
+        text_box.bind("<KeyRelease>", update_passage_text)
+        text_box.insert("1.0", text)
+
+        # ================= Questions Container ================= 
+        questions_container = ttk.Frame(passage_frame)
+        questions_container.pack(fill="x", pady=10)
+
+        # ================= Add Question =================
+        def add_question():
+            question_data = {
+                "sentence": "",
+                "blank_after_word": 0,
+                "choices": [],
+                "correct_choice_index": None
+            }
+            passage_data["questions"].append(question_data)
+
+            question_frame = ttk.Frame(questions_container, padding=5, relief="solid")
+            question_frame.pack(fill="x", pady=5)
+
+            # ---- Sentence ----
+            ttk.Label(question_frame, text="Sentence:").grid(row=0, column=0, sticky="w")
+            sentence_entry = ttk.Entry(question_frame, width=60)
+            sentence_entry.grid(row=0, column=1, columnspan=3, pady=3)
+
+            sentence_entry.bind(
+                "<KeyRelease>",
+                lambda e: question_data.update({"sentence": sentence_entry.get()})
+            )
+
+            # ---- Blank position ----
+            ttk.Label(question_frame, text="Blank after word #:").grid(row=1, column=0, sticky="w")
+            blank_spin = ttk.Spinbox(question_frame, from_=0, to=50, width=5)
+            blank_spin.grid(row=1, column=1, sticky="w")
+
+            blank_spin.bind(
+                "<KeyRelease>",
+                lambda e: question_data.update(
+                    {"blank_after_word": int(blank_spin.get() or 0)}
+                )
+            )
+
+            # ================= Choices Container =================
+            choices_container = ttk.Frame(question_frame)
+            choices_container.grid(row=2, column=0, columnspan=4, pady=5, sticky="w")
+
+            correct_choice_var = tk.IntVar(value=-1)
+            # ---- Add Choice ----
+            def add_choice():
+                choice_data = {"value": ""}
+                question_data["choices"].append(choice_data)
+
+                choice_frame = ttk.Frame(choices_container)
+                choice_frame.pack(fill="x", pady=2)
+
+                choice_index = len(question_data["choices"])
+
+                radio = ttk.Radiobutton(
+                    choice_frame,
+                    variable=correct_choice_var,
+                    value=choice_index,
+                    command=lambda: question_data.update({
+                        "correct_choice_index": correct_choice_var.get()-1
+                    })
+                )
+                radio.pack(side="left")
+
+                choice_entry = ttk.Entry(choice_frame, width=40)
+                choice_entry.pack(side="left", padx=3)
+
+                choice_entry.bind(
+                    "<KeyRelease>",
+                    lambda e: choice_data.update({"value": choice_entry.get()})
+                )
+
+                def remove_choice():
+                    question_data["choices"].remove(choice_data)
+                    choice_frame.destroy()
+                    if question_data["correct_choice_index"] == choice_index:
+                        question_data["correct_choice_index"] = None
+                        correct_choice_var.set(-1)
+
+                ttk.Button(
+                    choice_frame,
+                    text="Delete",
+                    command=remove_choice
+                ).pack(side="left")
+
+            ttk.Button(
+                question_frame,
+                text="Add Choice",
+                command=add_choice
+            ).grid(row=3, column=0, pady=5, sticky="w")
+
+            # ---- Remove Question ----
+            def remove_question():
+                passage_data["questions"].remove(question_data)
+                question_frame.destroy()
+
+            ttk.Button(
+                question_frame,
+                text="Delete Question",
+                command=remove_question
+            ).grid(row=3, column=3, pady=5, sticky="e")
+
+        def add_loaded_question_answers(question):
+            question_data = {
+                "sentence": question['sentence'],
+                "blank_after_word": question['blank_after_word'],
+                "choices": [],
+                "correct_choice_index": question['correct_choice_index']
+            }
+            passage_data["questions"].append(question_data)
+
+            question_frame = ttk.Frame(questions_container, padding=5, relief="solid")
+            question_frame.pack(fill="x", pady=5)
+
+            # ---- Sentence ----
+            ttk.Label(question_frame, text="Sentence:").grid(row=0, column=0, sticky="w")
+            sentence_entry = ttk.Entry(question_frame, width=60)
+            sentence_entry.grid(row=0, column=1, columnspan=3, pady=3)
+
+            sentence_entry.bind(
+                "<KeyRelease>",
+                lambda e: question_data.update({"sentence": sentence_entry.get()})
+            )
+            sentence_entry.insert(0, question['sentence'])
+            # ---- Blank position ----
+            ttk.Label(question_frame, text="Blank after word #:").grid(row=1, column=0, sticky="w")
+            blank_spin = ttk.Spinbox(question_frame, from_=0, to=50, width=5)
+            blank_spin.grid(row=1, column=1, sticky="w")
+
+            blank_spin.bind(
+                "<KeyRelease>",
+                lambda e: question_data.update(
+                    {"blank_after_word": int(blank_spin.get() or 0)}
+                )
+            )
+            blank_spin.set(question['blank_after_word']) 
+            # ================= Choices Container =================
+            choices_container = ttk.Frame(question_frame)
+            choices_container.grid(row=2, column=0, columnspan=4, pady=5, sticky="w")
+
+            correct_choice_var = tk.IntVar(value=-1)
+            # ---- Add Choice ----
+            def add_loaded_choices(choice,choice_order):
+                choice_data = {"value": choice}
+                question_data["choices"].append(choice_data)
+
+                choice_frame = ttk.Frame(choices_container)
+                choice_frame.pack(fill="x", pady=2)
+
+                choice_index = len(question_data["choices"])
+
+                radio = ttk.Radiobutton(
+                    choice_frame,
+                    variable=correct_choice_var,
+                    value=choice_index,
+                    command=lambda: question_data.update({
+                        "correct_choice_index": correct_choice_var.get()-1
+                    })
+                )
+                radio.pack(side="left")
+                # Check if this choice is the correct one
+                if choice_order == question_data["correct_choice_index"]:
+                    radio.invoke()  # This checks the radio button
+
+                choice_entry = ttk.Entry(choice_frame, width=40)
+                choice_entry.pack(side="left", padx=3)
+
+                choice_entry.bind(
+                    "<KeyRelease>",
+                    lambda e: choice_data.update({"value": choice_entry.get()})
+                )
+                choice_entry.insert(0,choice['value'])
+
+                def remove_choice():
+                    question_data["choices"].remove(choice_data)
+                    choice_frame.destroy()
+                    if question_data["correct_choice_index"] == choice_index:
+                        question_data["correct_choice_index"] = None
+                        correct_choice_var.set(-1)
+
+                ttk.Button(
+                    choice_frame,
+                    text="Delete",
+                    command=remove_choice
+                ).pack(side="left")
+            for i,choice in enumerate(question['choices']):
+                add_loaded_choices(choice,i)
+                        # ---- Add Choice ----
+            def add_choice():
+                choice_data = {"value": ""}
+                question_data["choices"].append(choice_data)
+
+                choice_frame = ttk.Frame(choices_container)
+                choice_frame.pack(fill="x", pady=2)
+
+                choice_index = len(question_data["choices"])
+
+                radio = ttk.Radiobutton(
+                    choice_frame,
+                    variable=correct_choice_var,
+                    value=choice_index,
+                    command=lambda: question_data.update({
+                        "correct_choice_index": correct_choice_var.get()-1
+                    })
+                )
+                radio.pack(side="left")
+
+                choice_entry = ttk.Entry(choice_frame, width=40)
+                choice_entry.pack(side="left", padx=3)
+
+                choice_entry.bind(
+                    "<KeyRelease>",
+                    lambda e: choice_data.update({"value": choice_entry.get()})
+                )
+
+                def remove_choice():
+                    question_data["choices"].remove(choice_data)
+                    choice_frame.destroy()
+                    if question_data["correct_choice_index"] == choice_index:
+                        question_data["correct_choice_index"] = None
+                        correct_choice_var.set(-1)
+
+                ttk.Button(
+                    choice_frame,
+                    text="Delete",
+                    command=remove_choice
+                ).pack(side="left")
+
+            ttk.Button(
+                question_frame,
+                text="Add Choice",
+                command=add_choice
+            ).grid(row=3, column=0, pady=5, sticky="w")
+
+            # ---- Remove Question ----
+            def remove_question():
+                passage_data["questions"].remove(question_data)
+                question_frame.destroy()
+
+            ttk.Button(
+                question_frame,
+                text="Delete Question",
+                command=remove_question
+            ).grid(row=3, column=3, pady=5, sticky="e")
+
+        # ================= Add Question Button =================
+        ttk.Button(
+            passage_frame,
+            text="Add Question",
+            command=add_question
+        ).pack(pady=5)
+
+        # fill entries and self.reading_passages with loaded question and answers
+        for question in questions:
+            add_loaded_question_answers(question)
+
+
         
     def setup_settings_section(self):
         # Output file settings
@@ -1186,7 +1492,8 @@ class AnimalLearningGameGenerator:
                 self.add_dialogue_frame_loaded_config(dialouge['title'],dialouge['lines'])
 
             # load reading_passages
-                    
+            for reading_passage in config.get('reading_passages',[]):
+                self.add_reading_passage_frame_loaded_config(reading_passage['title'],reading_passage['text'],reading_passage['questions'])
             # Load settings
             self.animals_per_row_var.set(str(config.get('animals_per_row', 3)))
             self.output_file_var.set(config.get('output_file', 'animal_game.html'))
