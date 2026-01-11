@@ -1750,7 +1750,7 @@ class AnimalLearningGameGenerator:
                         </div>
 
                         <div class="dialogue-body {pos}">
-                        <div class="character-name">{character_name}</div>
+                        <div class="character-name {pos}">{character_name}</div>
                         <div class="dialogue-text" id="dialogue_text_{d_idx}_{l_idx}" data-fulltext="{text}"></div>
                         </div>
                     </div>
@@ -1937,7 +1937,6 @@ class AnimalLearningGameGenerator:
 
     /* MAIN yellow section */
     .main-line {{
-    background: #fff8e1;
     border-radius: 12px;
     padding: 10px;
     display: flex;
@@ -1952,13 +1951,14 @@ class AnimalLearningGameGenerator:
     }}
 
     .main-line.expanded {{
-    width: 47%;
+    width: fit-content;
     }}
 
     /* text grows vertically after width max */
 
     .dialogue-body.left {{
     text-align:left;
+    align-items:end;
     flex: 1;
     }}
 
@@ -1988,6 +1988,7 @@ class AnimalLearningGameGenerator:
         height:fit-content;
         border-radius:5px;
         cursor:pointer;
+        margin-top:8px;
     }}
     .show-translation-button.hide{{
         display:none;
@@ -2009,7 +2010,6 @@ class AnimalLearningGameGenerator:
 
     /* active */
     .main-line.active {{
-    box-shadow: 0 10px 25px rgba(2,62,118,0.15);
     }}
 
     .dialogue {{ margin: 20px 0; text-align: right; }}
@@ -2022,7 +2022,6 @@ class AnimalLearningGameGenerator:
     gap: 12px;
     padding: 10px;
     border-radius: 12px;
-    background: #fff8e1;
     cursor: pointer;
     transition: transform 0.18s, box-shadow 0.18s;
     border: 2px solid transparent;
@@ -2045,12 +2044,21 @@ class AnimalLearningGameGenerator:
     /* active (selected) line */
     .dialogue-line.active {{
     transform: scale(1.02);
-    border-color: #0288d1;
-    box-shadow: 0 10px 30px rgba(2,62,118,0.12);
     }}
     .dialogue-line.active .dialogue-thumb img {{
     transform: scale(1.06);
     border-color: #0288d1;
+    }}
+    .dialogue-line.active .dialogue-body .dialogue-text {{
+    font-size: 1rem; 
+    color: #01579b; 
+    border-color: #0288d1; 
+    background: #fff8e1; 
+    border-radius: 12px;
+    border: 2px solid transparent;
+    box-shadow: 0 10px 30px rgba(2,62,118,0.12);
+    width:fit-content;
+    padding:7px;
     }}
 
     .dialogue-body {{
@@ -2063,14 +2071,20 @@ class AnimalLearningGameGenerator:
     }}
     .character-name{{
     font-weight: bold; 
+    }}
+    .dialogue-line.active .dialogue-body .character-name.right{{
     position: absolute; 
     top: 0; 
     right: 0;
     }}
-    .character-name.left{{
+    .dialogue-line.active .dialogue-body .character-name.left{{
+    position: absolute; 
+    top: 0; 
     left: 0;
     }}
-    .dialogue-text {{ font-size: 1rem; color: #01579b;}}
+    .dialogue-text {{ 
+    
+    }}
     @media (max-width: 600px) {{
     .dialogue-thumb img {{ width: 60px; height: 60px; }}
     .main-line {{max-width:80%;}}
@@ -2080,7 +2094,7 @@ class AnimalLearningGameGenerator:
     .dialogue-line-wrapper.left  {{ flex-direction: column; align-items:self-end}}
     .dialogue-line-wrapper.right {{ flex-direction: column; align-items:self-start}}
     .dialogue-head {{margin-bottom:30px}}
-
+    .dialogue-body {{height:79px}}
     }}
     
     /* تحسين الأسئلة والخيارات */
