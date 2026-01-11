@@ -456,9 +456,10 @@ class AnimalLearningGameGenerator:
         lines_container.pack(fill="x")
 
         # ================= duplicate Line =================
-        def duplicate_line(image_url,position,text,translation,audio):
+        def duplicate_line(character_name,image_url,position,text,translation,audio):
 
             line_data = {
+                "character_name": character_name,
                 "image": image_url,
                 "position": position,
                 "text": text,
@@ -470,17 +471,26 @@ class AnimalLearningGameGenerator:
             line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
             line_frame.pack(fill="x", pady=5)
 
+            # ================= Character Name =================
+            ttk.Label(line_frame, text="Character Name:").grid(row=0, column=0, sticky="nw")
+            character_name_entry = ttk.Entry(line_frame, width=40)
+            character_name_entry.grid(row=0, column=1, padx=5)
+            character_name_entry.bind(
+                "<KeyRelease>",
+                lambda e: line_data.update({"character_name": character_name_entry.get()})
+            )
+
             # ---- Image ----
-            ttk.Label(line_frame, text="Image URL:").grid(row=0, column=0, sticky="w")
+            ttk.Label(line_frame, text="Image URL:").grid(row=1, column=0, sticky="w")
             image_entry = ttk.Entry(line_frame, width=40)
-            image_entry.grid(row=0, column=1, padx=5)
+            image_entry.grid(row=1, column=1, padx=5)
             image_entry.bind(
                 "<KeyRelease>",
                 lambda e: line_data.update({"image": image_entry.get()})
             )
 
             # ---- Position ----
-            ttk.Label(line_frame, text="Position:").grid(row=0, column=2, padx=5)
+            ttk.Label(line_frame, text="Position:").grid(row=1, column=2, padx=5)
             position_var = tk.StringVar(value="left")
             position_menu = ttk.Combobox(
                 line_frame,
@@ -489,16 +499,16 @@ class AnimalLearningGameGenerator:
                 state="readonly",
                 width=7
             )
-            position_menu.grid(row=0, column=3)
+            position_menu.grid(row=1, column=3)
             position_var.trace_add(
                 "write",
                 lambda *args: line_data.update({"position": position_var.get()})
             )
 
             # ---- Text ----
-            ttk.Label(line_frame, text="Dialogue Text:").grid(row=1, column=0, sticky="nw")
+            ttk.Label(line_frame, text="Dialogue Text:").grid(row=2, column=0, sticky="nw")
             text_box = tk.Text(line_frame, height=3, width=60)
-            text_box.grid(row=1, column=1, columnspan=3, pady=5)
+            text_box.grid(row=2, column=1, columnspan=3, pady=5)
 
             def update_text(event):
                 line_data["text"] = text_box.get("1.0", "end").strip()
@@ -506,9 +516,9 @@ class AnimalLearningGameGenerator:
             text_box.bind("<KeyRelease>", update_text)
 
             # ---- Text translation ----
-            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=2, column=0, sticky="nw")
+            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=3, column=0, sticky="nw")
             text_translation_box = tk.Text(line_frame, height=3, width=60)
-            text_translation_box.grid(row=2, column=1, columnspan=3, pady=5)
+            text_translation_box.grid(row=3, column=1, columnspan=3, pady=5)
 
             def update_translation(event):
                 line_data["translation"] = text_translation_box.get("1.0", "end").strip()
@@ -516,9 +526,9 @@ class AnimalLearningGameGenerator:
             text_translation_box.bind("<KeyRelease>", update_translation)
 
             # ---- Audio ----
-            ttk.Label(line_frame, text="Audio:").grid(row=3, column=0, sticky="w")
+            ttk.Label(line_frame, text="Audio:").grid(row=4, column=0, sticky="w")
             audio_entry = ttk.Entry(line_frame, width=40)
-            audio_entry.grid(row=3, column=1, padx=5)
+            audio_entry.grid(row=4, column=1, padx=5)
 
             ttk.Button(
                 line_frame,
@@ -527,7 +537,7 @@ class AnimalLearningGameGenerator:
                     self.browse_audio(audio_entry),
                     line_data.update({"audio": audio_entry.get()})
                 )
-            ).grid(row=3, column=2)
+            ).grid(row=4, column=2)
 
             # ---- Delete Line ----
             def remove_line():
@@ -538,9 +548,10 @@ class AnimalLearningGameGenerator:
                 line_frame,
                 text="Delete Line",
                 command=remove_line
-            ).grid(row=4, column=3, padx=5)
+            ).grid(row=5, column=3, padx=5)
 
             # NOW insert the values
+            character_name_entry.insert(0, character_name)
             image_entry.insert(0, image_url)
             position_var.set(position)  
             text_box.insert("1.0", text) 
@@ -548,12 +559,13 @@ class AnimalLearningGameGenerator:
             audio_entry.insert(0, audio)
             
             ttk.Button(line_frame, text="Duplicate", 
-            command=lambda: duplicate_line(image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
-        .grid(row=4, column=2, sticky='w', pady=5) 
+            command=lambda: duplicate_line(character_name_entry.get(),image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
+        .grid(row=5, column=2, sticky='w', pady=5) 
 
         # ================= Add Line =================
         def add_line():
             line_data = {
+                "character_name": "",
                 "image": "",
                 "position": "left",
                 "text": "",
@@ -565,17 +577,26 @@ class AnimalLearningGameGenerator:
             line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
             line_frame.pack(fill="x", pady=5)
 
+            # ================= Character Name =================
+            ttk.Label(line_frame, text="Character Name:").grid(row=0, column=0, sticky="nw")
+            character_name_entry = ttk.Entry(line_frame, width=40)
+            character_name_entry.grid(row=0, column=1, padx=5)
+            character_name_entry.bind(
+                "<KeyRelease>",
+                lambda e: line_data.update({"character_name": character_name_entry.get()})
+            )
+
             # ---- Image ----
-            ttk.Label(line_frame, text="Image URL:").grid(row=0, column=0, sticky="w")
+            ttk.Label(line_frame, text="Image URL:").grid(row=1, column=0, sticky="w")
             image_entry = ttk.Entry(line_frame, width=40)
-            image_entry.grid(row=0, column=1, padx=5)
+            image_entry.grid(row=1, column=1, padx=5)
             image_entry.bind(
                 "<KeyRelease>",
                 lambda e: line_data.update({"image": image_entry.get()})
             )
 
             # ---- Position ----
-            ttk.Label(line_frame, text="Position:").grid(row=0, column=2, padx=5)
+            ttk.Label(line_frame, text="Position:").grid(row=1, column=2, padx=5)
             position_var = tk.StringVar(value="left")
             position_menu = ttk.Combobox(
                 line_frame,
@@ -584,16 +605,16 @@ class AnimalLearningGameGenerator:
                 state="readonly",
                 width=7
             )
-            position_menu.grid(row=0, column=3)
+            position_menu.grid(row=1, column=3)
             position_var.trace_add(
                 "write",
                 lambda *args: line_data.update({"position": position_var.get()})
             )
 
             # ---- Text ----
-            ttk.Label(line_frame, text="Dialogue Text:").grid(row=1, column=0, sticky="nw")
+            ttk.Label(line_frame, text="Dialogue Text:").grid(row=2, column=0, sticky="nw")
             text_box = tk.Text(line_frame, height=3, width=60)
-            text_box.grid(row=1, column=1, columnspan=3, pady=5)
+            text_box.grid(row=2, column=1, columnspan=3, pady=5)
 
             def update_text(event):
                 line_data["text"] = text_box.get("1.0", "end").strip()
@@ -601,9 +622,9 @@ class AnimalLearningGameGenerator:
             text_box.bind("<KeyRelease>", update_text)
 
             # ---- Text translation ----
-            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=2, column=0, sticky="nw")
+            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=3, column=0, sticky="nw")
             text_translation_box = tk.Text(line_frame, height=3, width=60)
-            text_translation_box.grid(row=2, column=1, columnspan=3, pady=5)
+            text_translation_box.grid(row=3, column=1, columnspan=3, pady=5)
 
             def update_translation(event):
                 line_data["translation"] = text_translation_box.get("1.0", "end").strip()
@@ -611,9 +632,9 @@ class AnimalLearningGameGenerator:
             text_translation_box.bind("<KeyRelease>", update_translation)
 
             # ---- Audio ----
-            ttk.Label(line_frame, text="Audio:").grid(row=3, column=0, sticky="w")
+            ttk.Label(line_frame, text="Audio:").grid(row=4, column=0, sticky="w")
             audio_entry = ttk.Entry(line_frame, width=40)
-            audio_entry.grid(row=3, column=1, padx=5)
+            audio_entry.grid(row=4, column=1, padx=5)
 
             ttk.Button(
                 line_frame,
@@ -622,7 +643,7 @@ class AnimalLearningGameGenerator:
                     self.browse_audio(audio_entry),
                     line_data.update({"audio": audio_entry.get()})
                 )
-            ).grid(row=3, column=2)
+            ).grid(row=4, column=2)
 
             # ---- Delete Line ----
             def remove_line():
@@ -633,11 +654,11 @@ class AnimalLearningGameGenerator:
                 line_frame,
                 text="Delete Line",
                 command=remove_line
-            ).grid(row=4, column=3, padx=5)
+            ).grid(row=5, column=3, padx=5)
 
             ttk.Button(line_frame, text="Duplicate", 
-            command=lambda: duplicate_line(image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
-        .grid(row=4, column=2, sticky='w', pady=5) 
+            command=lambda: duplicate_line(character_name_entry.get(),image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
+        .grid(row=5, column=2, sticky='w', pady=5) 
 
         # ================= Buttons =================
         ttk.Button(
@@ -691,9 +712,10 @@ class AnimalLearningGameGenerator:
         lines_container.pack(fill="x")
 
         # ================= duplicate Line =================
-        def duplicate_line(image_url,position,text,translation,audio):
+        def duplicate_line(character_name,image_url,position,text,translation,audio):
 
             line_data = {
+                "character_name": character_name,
                 "image": image_url,
                 "position": position,
                 "text": text,
@@ -701,21 +723,30 @@ class AnimalLearningGameGenerator:
                 "audio": audio
             }
             dialogue_data["lines"].append(line_data)
-            
+
             line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
             line_frame.pack(fill="x", pady=5)
-            
+
+            # ================= Character Name =================
+            ttk.Label(line_frame, text="Character Name:").grid(row=0, column=0, sticky="nw")
+            character_name_entry = ttk.Entry(line_frame, width=40)
+            character_name_entry.grid(row=0, column=1, padx=5)
+            character_name_entry.bind(
+                "<KeyRelease>",
+                lambda e: line_data.update({"character_name": character_name_entry.get()})
+            )
+
             # ---- Image ----
-            ttk.Label(line_frame, text="Image URL:").grid(row=0, column=0, sticky="w")
+            ttk.Label(line_frame, text="Image URL:").grid(row=1, column=0, sticky="w")
             image_entry = ttk.Entry(line_frame, width=40)
-            image_entry.grid(row=0, column=1, padx=5)
+            image_entry.grid(row=1, column=1, padx=5)
             image_entry.bind(
                 "<KeyRelease>",
                 lambda e: line_data.update({"image": image_entry.get()})
             )
-            
+
             # ---- Position ----
-            ttk.Label(line_frame, text="Position:").grid(row=0, column=2, padx=5)
+            ttk.Label(line_frame, text="Position:").grid(row=1, column=2, padx=5)
             position_var = tk.StringVar(value="left")
             position_menu = ttk.Combobox(
                 line_frame,
@@ -724,26 +755,26 @@ class AnimalLearningGameGenerator:
                 state="readonly",
                 width=7
             )
-            position_menu.grid(row=0, column=3)
+            position_menu.grid(row=1, column=3)
             position_var.trace_add(
                 "write",
                 lambda *args: line_data.update({"position": position_var.get()})
             )
-            
+
             # ---- Text ----
-            ttk.Label(line_frame, text="Dialogue Text:").grid(row=1, column=0, sticky="nw")
+            ttk.Label(line_frame, text="Dialogue Text:").grid(row=2, column=0, sticky="nw")
             text_box = tk.Text(line_frame, height=3, width=60)
-            text_box.grid(row=1, column=1, columnspan=3, pady=5)
+            text_box.grid(row=2, column=1, columnspan=3, pady=5)
 
             def update_text(event):
                 line_data["text"] = text_box.get("1.0", "end").strip()
 
             text_box.bind("<KeyRelease>", update_text)
-            
+
             # ---- Text translation ----
-            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=2, column=0, sticky="nw")
+            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=3, column=0, sticky="nw")
             text_translation_box = tk.Text(line_frame, height=3, width=60)
-            text_translation_box.grid(row=2, column=1, columnspan=3, pady=5)
+            text_translation_box.grid(row=3, column=1, columnspan=3, pady=5)
 
             def update_translation(event):
                 line_data["translation"] = text_translation_box.get("1.0", "end").strip()
@@ -751,9 +782,9 @@ class AnimalLearningGameGenerator:
             text_translation_box.bind("<KeyRelease>", update_translation)
 
             # ---- Audio ----
-            ttk.Label(line_frame, text="Audio:").grid(row=3, column=0, sticky="w")
+            ttk.Label(line_frame, text="Audio:").grid(row=4, column=0, sticky="w")
             audio_entry = ttk.Entry(line_frame, width=40)
-            audio_entry.grid(row=3, column=1, padx=5)
+            audio_entry.grid(row=4, column=1, padx=5)
 
             ttk.Button(
                 line_frame,
@@ -762,8 +793,8 @@ class AnimalLearningGameGenerator:
                     self.browse_audio(audio_entry),
                     line_data.update({"audio": audio_entry.get()})
                 )
-            ).grid(row=3, column=2)
-            
+            ).grid(row=4, column=2)
+
             # ---- Delete Line ----
             def remove_line():
                 dialogue_data["lines"].remove(line_data)
@@ -773,9 +804,10 @@ class AnimalLearningGameGenerator:
                 line_frame,
                 text="Delete Line",
                 command=remove_line
-            ).grid(row=4, column=3, padx=5)
-            
+            ).grid(row=5, column=3, padx=5)
+
             # NOW insert the values
+            character_name_entry.insert(0, character_name)
             image_entry.insert(0, image_url)
             position_var.set(position)  
             text_box.insert("1.0", text) 
@@ -783,12 +815,13 @@ class AnimalLearningGameGenerator:
             audio_entry.insert(0, audio)
             
             ttk.Button(line_frame, text="Duplicate", 
-            command=lambda: duplicate_line(image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
-        .grid(row=4, column=2, sticky='w', pady=5) 
-
+            command=lambda: duplicate_line(character_name_entry.get(),image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
+        .grid(row=5, column=2, sticky='w', pady=5) 
+            
         # ================= Add Line =================
         def add_line():
             line_data = {
+                "character_name": "",
                 "image": "",
                 "position": "left",
                 "text": "",
@@ -800,17 +833,26 @@ class AnimalLearningGameGenerator:
             line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
             line_frame.pack(fill="x", pady=5)
 
+            # ================= Character Name =================
+            ttk.Label(line_frame, text="Character Name:").grid(row=0, column=0, sticky="nw")
+            character_name_entry = ttk.Entry(line_frame, width=40)
+            character_name_entry.grid(row=0, column=1, padx=5)
+            character_name_entry.bind(
+                "<KeyRelease>",
+                lambda e: line_data.update({"character_name": character_name_entry.get()})
+            )
+
             # ---- Image ----
-            ttk.Label(line_frame, text="Image URL:").grid(row=0, column=0, sticky="w")
+            ttk.Label(line_frame, text="Image URL:").grid(row=1, column=0, sticky="w")
             image_entry = ttk.Entry(line_frame, width=40)
-            image_entry.grid(row=0, column=1, padx=5)
+            image_entry.grid(row=1, column=1, padx=5)
             image_entry.bind(
                 "<KeyRelease>",
                 lambda e: line_data.update({"image": image_entry.get()})
             )
 
             # ---- Position ----
-            ttk.Label(line_frame, text="Position:").grid(row=0, column=2, padx=5)
+            ttk.Label(line_frame, text="Position:").grid(row=1, column=2, padx=5)
             position_var = tk.StringVar(value="left")
             position_menu = ttk.Combobox(
                 line_frame,
@@ -819,16 +861,16 @@ class AnimalLearningGameGenerator:
                 state="readonly",
                 width=7
             )
-            position_menu.grid(row=0, column=3)
+            position_menu.grid(row=1, column=3)
             position_var.trace_add(
                 "write",
                 lambda *args: line_data.update({"position": position_var.get()})
             )
 
             # ---- Text ----
-            ttk.Label(line_frame, text="Dialogue Text:").grid(row=1, column=0, sticky="nw")
+            ttk.Label(line_frame, text="Dialogue Text:").grid(row=2, column=0, sticky="nw")
             text_box = tk.Text(line_frame, height=3, width=60)
-            text_box.grid(row=1, column=1, columnspan=3, pady=5)
+            text_box.grid(row=2, column=1, columnspan=3, pady=5)
 
             def update_text(event):
                 line_data["text"] = text_box.get("1.0", "end").strip()
@@ -836,9 +878,9 @@ class AnimalLearningGameGenerator:
             text_box.bind("<KeyRelease>", update_text)
 
             # ---- Text translation ----
-            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=2, column=0, sticky="nw")
+            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=3, column=0, sticky="nw")
             text_translation_box = tk.Text(line_frame, height=3, width=60)
-            text_translation_box.grid(row=2, column=1, columnspan=3, pady=5)
+            text_translation_box.grid(row=3, column=1, columnspan=3, pady=5)
 
             def update_translation(event):
                 line_data["translation"] = text_translation_box.get("1.0", "end").strip()
@@ -846,9 +888,9 @@ class AnimalLearningGameGenerator:
             text_translation_box.bind("<KeyRelease>", update_translation)
 
             # ---- Audio ----
-            ttk.Label(line_frame, text="Audio:").grid(row=3, column=0, sticky="w")
+            ttk.Label(line_frame, text="Audio:").grid(row=4, column=0, sticky="w")
             audio_entry = ttk.Entry(line_frame, width=40)
-            audio_entry.grid(row=3, column=1, padx=5)
+            audio_entry.grid(row=4, column=1, padx=5)
 
             ttk.Button(
                 line_frame,
@@ -857,7 +899,7 @@ class AnimalLearningGameGenerator:
                     self.browse_audio(audio_entry),
                     line_data.update({"audio": audio_entry.get()})
                 )
-            ).grid(row=3, column=2)
+            ).grid(row=4, column=2)
 
             # ---- Delete Line ----
             def remove_line():
@@ -868,11 +910,11 @@ class AnimalLearningGameGenerator:
                 line_frame,
                 text="Delete Line",
                 command=remove_line
-            ).grid(row=4, column=3, padx=5)
+            ).grid(row=5, column=3, padx=5)
 
             ttk.Button(line_frame, text="Duplicate", 
-            command=lambda: duplicate_line(image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
-        .grid(row=4, column=2, sticky='w', pady=5) 
+            command=lambda: duplicate_line(character_name_entry.get(),image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
+        .grid(row=5, column=2, sticky='w', pady=5) 
 
         # ================= Buttons =================
         ttk.Button(
@@ -882,7 +924,7 @@ class AnimalLearningGameGenerator:
         ).pack(pady=5)
         for loaded_line in loaded_lines:
             # Add loaded line using function duplicate line
-            duplicate_line(loaded_line["image"],loaded_line["position"],loaded_line["text"],loaded_line["translation"],loaded_line["audio"])
+            duplicate_line(loaded_line["character_name"],loaded_line["image"],loaded_line["position"],loaded_line["text"],loaded_line["translation"],loaded_line["audio"])
 
     def setup_reading_passages_section(self):
         # Add reading_passage button
@@ -1567,7 +1609,7 @@ class AnimalLearningGameGenerator:
             for i, word in enumerate(words):
                 if i == question["blank_after_word"]:
                     # Create dropdown for choices
-                    options_html = '<option value="">اختر إجابة</option>'
+                    options_html = '<option value=""> </option>'
                     for idx, choice in enumerate(question["choices"]):
                         options_html += f'<option value="{idx}">{choice["value"]}</option>'
                     
@@ -1581,7 +1623,7 @@ class AnimalLearningGameGenerator:
             
             # Add dropdown at the end if blank_after_word is after last word
             if question["blank_after_word"] >= len(words):
-                options_html = '<option value="">اختر إجابة</option>'
+                options_html = '<option value=""> </option>'
                 for idx, choice in enumerate(question["choices"]):
                     options_html += f'<option value="{idx}">{choice["value"]}</option>'
                 
@@ -1677,6 +1719,7 @@ class AnimalLearningGameGenerator:
                 dialogues_html += '  <div class="dialogue-container">\n'
 
                 for l_idx, line in enumerate(dialogue.get("lines", [])):
+                    character_name = line.get("character_name", "") or ""
                     img = line.get("image", "") or ""
                     pos = (line.get("position", "") or "left").lower()
                     text = line.get("text", "") or ""
@@ -1707,12 +1750,13 @@ class AnimalLearningGameGenerator:
                         </div>
 
                         <div class="dialogue-body {pos}">
+                        <div class="character-name">{character_name}</div>
                         <div class="dialogue-text" id="dialogue_text_{d_idx}_{l_idx}" data-fulltext="{text}"></div>
                         </div>
                     </div>
 
                     <!-- TRANSLATION button -->
-                    <button class="show-translation-button" id="line_translation_button_{d_idx}_{l_idx}" onclick="showTranslate({d_idx},{l_idx})">🈯 Translate</button>
+                    <button class="show-translation-button" id="line_translation_button_{d_idx}_{l_idx}" onclick="showTranslate({d_idx},{l_idx})">🌐👉 Click here to translate</button>
                     <!-- TRANSLATION (hidden by default) -->
                     <div class="dialogue-translation" id="dialogue_translation_{d_idx}_{l_idx}">
                         {translation}
@@ -1912,9 +1956,6 @@ class AnimalLearningGameGenerator:
     }}
 
     /* text grows vertically after width max */
-    .dialogue-body {{
-    flex: 1;
-    }}
 
     .dialogue-body.left {{
     text-align:left;
@@ -2012,8 +2053,24 @@ class AnimalLearningGameGenerator:
     border-color: #0288d1;
     }}
 
-    .dialogue-body {{ flex: 1; }}
-    .dialogue-text {{ font-size: 1rem; color: #01579b; }}
+    .dialogue-body {{
+    display: flex; 
+    flex-direction: column; 
+    justify-content: center; 
+    min-height: 100%; 
+    flex: 1; 
+    position: relative;
+    }}
+    .character-name{{
+    font-weight: bold; 
+    position: absolute; 
+    top: 0; 
+    right: 0;
+    }}
+    .character-name.left{{
+    left: 0;
+    }}
+    .dialogue-text {{ font-size: 1rem; color: #01579b;}}
     @media (max-width: 600px) {{
     .dialogue-thumb img {{ width: 60px; height: 60px; }}
     .main-line {{max-width:80%;}}
@@ -2500,7 +2557,7 @@ class AnimalLearningGameGenerator:
 
     <!-- Feelings Feedback Section -->
     <div class="feelings-section">
-    <h3 class="feelings-title">How do you feel ?</h3>
+    <h3 class="feelings-title">?How do you feel</h3>
     <div class="feelings-container">
         <div class="feeling-item" data-feeling="frustrated">
         <span class="feeling-emoji">😫</span>
@@ -2527,7 +2584,7 @@ class AnimalLearningGameGenerator:
 
     <!-- Contact Section -->
     <div class="contact-section">
-      <p class="contact-text">For contact or more information:</p>
+      <p class="contact-text">:For contact or more information</p>
       <a href="mailto:a.hossam.contact@gmail.com" class="contact-email">
         a.hossam.contact@gmail.com
       </a>
