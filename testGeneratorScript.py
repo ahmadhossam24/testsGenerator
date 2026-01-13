@@ -1429,7 +1429,13 @@ class AnimalLearningGameGenerator:
         output_entry = ttk.Entry(self.settings_frame, textvariable=self.output_file_var, width=40)
         output_entry.grid(row=0, column=1, pady=5, padx=5, sticky='we')
         ttk.Button(self.settings_frame, text="Browse", command=self.browse_output).grid(row=0, column=2, pady=5, padx=5)
-        
+
+        # test title
+        ttk.Label(self.settings_frame, text="Test Title:").grid(row=1, column=0, sticky='w', pady=5)
+        self.test_title_var=tk.StringVar(value="Lesson Practice")
+        test_title_entry = ttk.Entry(self.settings_frame, textvariable=self.test_title_var, width=20)
+        test_title_entry.grid(row=1, column=1, pady=5, padx=5, sticky='we')
+
         # Configure grid weights
         self.settings_frame.columnconfigure(1, weight=1)
 
@@ -1477,6 +1483,7 @@ class AnimalLearningGameGenerator:
         # Reset settings
         self.animals_per_row_var.set("3")
         self.output_file_var.set("animal_game.html")
+        self.test_title_var.set("Lesson Practice")
         
     def load_config(self):
         filename = filedialog.askopenfilename(
@@ -1539,6 +1546,7 @@ class AnimalLearningGameGenerator:
             # Load settings
             self.animals_per_row_var.set(str(config.get('animals_per_row', 3)))
             self.output_file_var.set(config.get('output_file', 'animal_game.html'))
+            self.test_title_var.set(config.get('test_title', 'Lesson Practice'))
             
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load configuration: {str(e)}")
@@ -1583,7 +1591,8 @@ class AnimalLearningGameGenerator:
                 'dialogues':self.dialouges,
                 'reading_passages':self.reading_passages,
                 'animals_per_row': int(self.animals_per_row_var.get()),
-                'output_file': self.output_file_var.get()
+                'output_file': self.output_file_var.get(),
+                'test_title': self.test_title_var.get()
             }
             
             # Save to file
@@ -1675,6 +1684,8 @@ class AnimalLearningGameGenerator:
             # Prepare animals HTML
             animals_html = ""
             animals_per_row = int(self.animals_per_row_var.get())
+            test_title_var=""
+            test_title_var+=f"""{self.test_title_var.get()}"""
             
             for i, animal in enumerate(self.animals):
                 if i % animals_per_row == 0:
@@ -2548,7 +2559,7 @@ class AnimalLearningGameGenerator:
   </audio>
   {successAudioEncoded}
   <div class="container">
-    <h1>Learning Test</h1>
+    <h1>{test_title_var}</h1>
 
     <!-- صور الحيوانات -->
     {animals_html}
@@ -2704,6 +2715,16 @@ All rights reserved © 2026 – Educational Design and Development
 
                 const audio = document.getElementById(`dialogue_audio_${{d}}_${{l}}`);
                 await new Promise(res => {{
+                if (!audio) {{ // No audio element found → resolve immediately 
+                res(); 
+                return; 
+                }} 
+                // If audio exists but isn’t playing, you may want to resolve too 
+                if (audio.readyState === 0) {{ // No source loaded 
+                res(); 
+                return; 
+                }}
+                // Otherwise wait until audio finishes
                 audio.onended = res;
                 }});
             }}
@@ -2887,6 +2908,7 @@ All rights reserved © 2026 – Educational Design and Development
                 cheer_audio_base64=cheer_audio_base64,
                 successAudioEncoded=successAudioEncoded,
                 animals_html=animals_html,
+                test_title_var=test_title_var,
                 dialogues_html=dialogues_html,
                 reading_passages_html=reading_passages_html,
                 questions_html=questions_html,
