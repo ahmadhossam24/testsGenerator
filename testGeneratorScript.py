@@ -89,17 +89,42 @@ class AnimalLearningGameGenerator:
         self.context_menu.post(event.x_root, event.y_root)
         
     def cut_text(self):
-        if hasattr(self, 'focused_widget') and isinstance(self.focused_widget, tk.Entry):
-            self.focused_widget.event_generate("<<Cut>>")
-            
+        if hasattr(self, 'focused_widget'):
+            if isinstance(self.focused_widget, tk.Entry) or isinstance(self.focused_widget, ttk.Entry):
+                self.focused_widget.event_generate("<<Cut>>")
+            elif isinstance(self.focused_widget, tk.Text):
+                try:
+                    self.focused_widget.event_generate("<<Cut>>")  # optional
+                    # or directly delete selected text
+                    self.focused_widget.delete("sel.first", "sel.last")
+                except tk.TclError:
+                    pass  # nothing selected
+
     def copy_text(self):
-        if hasattr(self, 'focused_widget') and isinstance(self.focused_widget, tk.Entry):
-            self.focused_widget.event_generate("<<Copy>>")
-            
+        if hasattr(self, 'focused_widget'):
+            if isinstance(self.focused_widget, tk.Entry) or isinstance(self.focused_widget, ttk.Entry):
+                self.focused_widget.event_generate("<<Copy>>")
+            elif isinstance(self.focused_widget, tk.Text):
+                try:
+                    self.focused_widget.event_generate("<<Copy>>")  # optional
+                    # or directly copy
+                    text = self.focused_widget.get("sel.first", "sel.last")
+                    self.root.clipboard_clear()
+                    self.root.clipboard_append(text)
+                except tk.TclError:
+                    pass
+
     def paste_text(self):
-        if hasattr(self, 'focused_widget') and isinstance(self.focused_widget, tk.Entry):
-            self.focused_widget.event_generate("<<Paste>>")
-        
+        if hasattr(self, 'focused_widget'):
+            if isinstance(self.focused_widget, tk.Entry) or isinstance(self.focused_widget, ttk.Entry):
+                self.focused_widget.event_generate("<<Paste>>")
+            elif isinstance(self.focused_widget, tk.Text):
+                try:
+                    text = self.root.clipboard_get()
+                    self.focused_widget.insert("insert", text)
+                except tk.TclError:
+                    pass
+
     def setup_menu(self):
         menubar = tk.Menu(self.root)
         file_menu = tk.Menu(menubar, tearoff=0)
@@ -579,7 +604,7 @@ class AnimalLearningGameGenerator:
 
             # ================= Character Name =================
             ttk.Label(line_frame, text="Character Name:").grid(row=0, column=0, sticky="nw")
-            character_name_entry = ttk.Entry(line_frame, width=40)
+            character_name_entry = ttk.Entry(line_frame,width=40)
             character_name_entry.grid(row=0, column=1, padx=5)
             character_name_entry.bind(
                 "<KeyRelease>",
@@ -613,13 +638,15 @@ class AnimalLearningGameGenerator:
 
             # ---- Text ----
             ttk.Label(line_frame, text="Dialogue Text:").grid(row=2, column=0, sticky="nw")
-            text_box = tk.Text(line_frame, height=3, width=60)
+            text_box = tk.Text(line_frame,
+                                height=3, width=60)
             text_box.grid(row=2, column=1, columnspan=3, pady=5)
 
             def update_text(event):
                 line_data["text"] = text_box.get("1.0", "end").strip()
 
             text_box.bind("<KeyRelease>", update_text)
+
 
             # ---- Text translation ----
             ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=3, column=0, sticky="nw")
