@@ -1,5 +1,13 @@
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
+from PySide6.QtWidgets import  (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
+    QTabWidget, QFrame, QMenuBar, QMenu, QLabel, QSpinBox, 
+    QPushButton, QScrollArea, QSizePolicy, QGridLayout,QLineEdit, QFileDialog, QGroupBox,QRadioButton,
+    QButtonGroup, QTextEdit, QCheckBox,QComboBox,QMessageBox
+) 
+from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtCore import Qt,QSize,Signal
 import json
 import base64
 import sys
@@ -17,11 +25,19 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
-class AnimalLearningGameGenerator:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Learning Game Generator")
-        self.root.geometry("900x700")
+class AnimalLearningGameGenerator(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        
+        # Set window properties
+        self.setWindowTitle("Learning Game Generator")
+        self.setGeometry(100, 100, 900, 700)  # x, y, width, height
+        
+        # Create central widget and layout
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        main_layout = QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(10, 10, 10, 10)  # Equivalent to padx/pady
         
         # Data storage
         self.animals = []
@@ -30,30 +46,49 @@ class AnimalLearningGameGenerator:
         self.reading_passages = []
         self.animals_per_row = 3
         
-        # Create notebook for sections
-        self.notebook = ttk.Notebook(root)
-        self.notebook.pack(fill='both', expand=True, padx=10, pady=10)
+        # Create notebook/tab widget for sections
+        self.notebook = QTabWidget()
+        self.notebook.setDocumentMode(True)  # Cleaner tab style
         
-        # Animals frame
-        self.animals_frame = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(self.animals_frame, text="Cards")
+        # Create frames for each tab
+        self.animals_frame = QFrame()
+        self.animals_frame.setFrameStyle(QFrame.StyledPanel)
+        self.notebook.addTab(self.animals_frame, "Cards")
         
-        # Questions frame
-        self.questions_frame = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(self.questions_frame, text="Questions")
-
-        # dialouges frame
-        self.dialouges_frame = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(self.dialouges_frame, text="Dialouges")
-
-        # reading passages frame
-        self.reading_passages_frame = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(self.reading_passages_frame, text="Reading passages")
+        self.questions_frame = QFrame()
+        self.questions_frame.setFrameStyle(QFrame.StyledPanel)
+        self.notebook.addTab(self.questions_frame, "Questions")
         
-        # Settings frame
-        self.settings_frame = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(self.settings_frame, text="Settings")
-
+        self.dialogues_frame = QFrame()
+        self.dialogues_frame.setFrameStyle(QFrame.StyledPanel)
+        self.notebook.addTab(self.dialogues_frame, "Dialogues")
+        
+        self.reading_passages_frame = QFrame()
+        self.reading_passages_frame.setFrameStyle(QFrame.StyledPanel)
+        self.notebook.addTab(self.reading_passages_frame, "Reading passages")
+        
+        self.settings_frame = QFrame()
+        self.settings_frame.setFrameStyle(QFrame.StyledPanel)
+        self.notebook.addTab(self.settings_frame, "Settings")
+        
+        # Add notebook to main layout
+        main_layout.addWidget(self.notebook)
+        
+        # Create layouts for each tab's frame
+        self.animals_layout = QVBoxLayout(self.animals_frame)
+        self.questions_layout = QVBoxLayout(self.questions_frame)
+        self.dialogues_layout = QVBoxLayout(self.dialogues_frame)
+        self.reading_passages_layout = QVBoxLayout(self.reading_passages_frame)
+        self.settings_layout = QVBoxLayout(self.settings_frame)
+        
+        # Set margins for each frame's layout (padding)
+        padding = 10
+        self.animals_layout.setContentsMargins(padding, padding, padding, padding)
+        self.questions_layout.setContentsMargins(padding, padding, padding, padding)
+        self.dialogues_layout.setContentsMargins(padding, padding, padding, padding)
+        self.reading_passages_layout.setContentsMargins(padding, padding, padding, padding)
+        self.settings_layout.setContentsMargins(padding, padding, padding, padding)
+        
         # successAudio
         self.successAudioEncodedString=""
         try:
@@ -65,220 +100,341 @@ class AnimalLearningGameGenerator:
         
         self.setup_animals_section()
         self.setup_questions_section()
-        self.setup_dialouges_section()
+        self.setup_dialogues_section()
         self.setup_reading_passages_section()
         self.setup_settings_section()
         self.setup_menu()
-        self.setup_context_menus()
-
-    def setup_context_menus(self):
-        # Create a context menu
-        self.context_menu = tk.Menu(self.root, tearoff=0)
-        self.context_menu.add_command(label="Cut", command=lambda: self.cut_text())
-        self.context_menu.add_command(label="Copy", command=lambda: self.copy_text())
-        self.context_menu.add_command(label="Paste", command=lambda: self.paste_text())
-        
-        # Bind right-click event to all entry widgets
-        self.root.bind_class("TEntry", "<Button-3>", self.show_context_menu)
-        self.root.bind_class("Text", "<Button-3>", self.show_context_menu)
-        
-    def show_context_menu(self, event):
-        # Store the widget that was right-clicked
-        self.focused_widget = event.widget
-        # Show the context menu at the cursor position
-        self.context_menu.post(event.x_root, event.y_root)
-        
-    def cut_text(self):
-        if hasattr(self, 'focused_widget'):
-            if isinstance(self.focused_widget, tk.Entry) or isinstance(self.focused_widget, ttk.Entry):
-                self.focused_widget.event_generate("<<Cut>>")
-            elif isinstance(self.focused_widget, tk.Text):
-                try:
-                    self.focused_widget.event_generate("<<Cut>>")  # optional
-                    # or directly delete selected text
-                    self.focused_widget.delete("sel.first", "sel.last")
-                except tk.TclError:
-                    pass  # nothing selected
-
-    def copy_text(self):
-        if hasattr(self, 'focused_widget'):
-            if isinstance(self.focused_widget, tk.Entry) or isinstance(self.focused_widget, ttk.Entry):
-                self.focused_widget.event_generate("<<Copy>>")
-            elif isinstance(self.focused_widget, tk.Text):
-                try:
-                    self.focused_widget.event_generate("<<Copy>>")  # optional
-                    # or directly copy
-                    text = self.focused_widget.get("sel.first", "sel.last")
-                    self.root.clipboard_clear()
-                    self.root.clipboard_append(text)
-                except tk.TclError:
-                    pass
-
-    def paste_text(self):
-        if hasattr(self, 'focused_widget'):
-            if isinstance(self.focused_widget, tk.Entry) or isinstance(self.focused_widget, ttk.Entry):
-                self.focused_widget.event_generate("<<Paste>>")
-            elif isinstance(self.focused_widget, tk.Text):
-                try:
-                    text = self.root.clipboard_get()
-                    self.focused_widget.insert("insert", text)
-                except tk.TclError:
-                    pass
 
     def setup_menu(self):
-        menubar = tk.Menu(self.root)
-        file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="New", command=self.new_config)
-        file_menu.add_command(label="Load", command=self.load_config)
-        file_menu.add_command(label="Save", command=self.save_config)
-        file_menu.add_separator()
-        file_menu.add_command(label="Generate HTML", command=self.generate_html)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit)
-        menubar.add_cascade(label="File", menu=file_menu)
-        self.root.config(menu=menubar)
+        # Create menu bar (automatically added to QMainWindow)
+        menubar = self.menuBar()
+        
+        # Create File menu
+        file_menu = menubar.addMenu("&File")
+        
+        # Add New action
+        new_action = QAction("&New", self)
+        new_action.setShortcut(QKeySequence.New)
+        new_action.triggered.connect(self.new_config)
+        file_menu.addAction(new_action)
+        
+        # Add Load action
+        load_action = QAction("&Load", self)
+        load_action.setShortcut(QKeySequence.Open)
+        load_action.triggered.connect(self.load_config)
+        file_menu.addAction(load_action)
+        
+        # Add Save action
+        save_action = QAction("&Save", self)
+        save_action.setShortcut(QKeySequence.Save)
+        save_action.triggered.connect(self.save_config)
+        file_menu.addAction(save_action)
+        
+        # Add separator
+        file_menu.addSeparator()
+        
+        # Add Generate HTML action
+        generate_action = QAction("&Generate HTML", self)
+        # You can add a shortcut if needed
+        # generate_action.setShortcut("Ctrl+G")
+        generate_action.triggered.connect(self.generate_html)
+        file_menu.addAction(generate_action)
+        
+        # Add separator
+        file_menu.addSeparator()
+        
+        # Add Exit action
+        exit_action = QAction("E&xit", self)
+        exit_action.setShortcut(QKeySequence.Quit)
+        exit_action.triggered.connect(self.close)  
+        file_menu.addAction(exit_action)
         
     def setup_animals_section(self):
-        # Animals per row setting
-        ttk.Label(self.animals_frame, text="Cards per row:").grid(row=0, column=0, sticky='w', pady=5)
-        self.animals_per_row_var = tk.StringVar(value="3")
-        animals_per_row_spinbox = ttk.Spinbox(self.animals_frame, from_=1, to=6, textvariable=self.animals_per_row_var, width=5)
-        animals_per_row_spinbox.grid(row=0, column=1, sticky='w', pady=5)
-        
-        # Add animal button
-        ttk.Button(self.animals_frame, text="Add Card", command=self.add_animal_frame).grid(row=0, column=2, pady=5, padx=5)
-        
-        #  # Create a frame for the canvas and scrollbar
-        container = ttk.Frame(self.animals_frame)
-        container.grid(row=1, column=0, columnspan=3, sticky='nsew', pady=10)
-        
-        # Create a canvas and scrollbar
-        canvas = tk.Canvas(container)
-        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
-        self.animals_container = ttk.Frame(canvas)
-        
-        # Configure the canvas
-        self.animals_container.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        
-        # Create a window in the canvas for the animals container
-        canvas.create_window((0, 0), window=self.animals_container, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        # Pack the canvas and scrollbar
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        
-        # Configure grid weights
-        self.animals_frame.columnconfigure(0, weight=1)
-        self.animals_frame.rowconfigure(1, weight=1)
-        
-        # Add initial animal frame
-        self.add_animal_frame()
-        
+            # Create horizontal layout for the first row of controls
+            controls_layout = QHBoxLayout()
+            
+            # Animals per row setting
+            animals_label = QLabel("Cards per row:")
+            self.animals_per_row_spinbox = QSpinBox()
+            self.animals_per_row_spinbox.setRange(1, 6)
+            self.animals_per_row_spinbox.setValue(3)
+            self.animals_per_row_spinbox.setFixedWidth(60)
+            
+            # Add animal button
+            add_animal_button = QPushButton("Add Card")
+            add_animal_button.clicked.connect(self.add_animal_frame)
+            
+            # Add widgets to controls layout
+            controls_layout.addWidget(animals_label)
+            controls_layout.addWidget(self.animals_per_row_spinbox)
+            controls_layout.addWidget(add_animal_button)
+            controls_layout.addStretch()  # Push items to the left
+            
+            # Add spacing/margins
+            controls_layout.setSpacing(10)
+            
+            # Add controls layout to animals layout
+            self.animals_layout.addLayout(controls_layout)
+            
+            # Create scroll area for animal frames
+            self.scroll_area = QScrollArea()
+            self.scroll_area.setWidgetResizable(True)
+            self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            
+            # Create container widget for the scroll area
+            self.scroll_container = QWidget()
+            self.animals_container_layout = QVBoxLayout(self.scroll_container)
+            self.animals_container_layout.setSpacing(10)
+            self.animals_container_layout.setContentsMargins(5, 5, 5, 5)
+            
+            # Add a stretch at the end to push frames to the top
+            self.animals_container_layout.addStretch()
+            
+            # Set the container as the scroll area's widget
+            self.scroll_area.setWidget(self.scroll_container)
+            
+            # Add scroll area to animals layout
+            self.animals_layout.addWidget(self.scroll_area)
+            
+            # Add initial animal frame (you'll implement this later)
+            self.add_animal_frame()   
+
     def add_animal_frame(self):
-        frame = ttk.Frame(self.animals_container, relief='groove', borderwidth=1)
-        frame.pack(fill='x', pady=5, padx=5)
-        
-        # Image URL
-        ttk.Label(frame, text="Image URL:").grid(row=0, column=0, sticky='w', pady=2)
-        image_url_entry = ttk.Entry(frame, width=40)
-        image_url_entry.grid(row=0, column=1, pady=2, padx=5)
-        
-        # Title
-        ttk.Label(frame, text="Title (e.g., 'Cat (قطة)'):").grid(row=1, column=0, sticky='w', pady=2)
-        title_entry = ttk.Entry(frame, width=40)
-        title_entry.grid(row=1, column=1, pady=2, padx=5)
-        
-        # Word to speak
-        ttk.Label(frame, text="Word to speak (Arabic):").grid(row=2, column=0, sticky='w', pady=2)
-        word_entry = ttk.Entry(frame, width=40)
-        word_entry.grid(row=2, column=1, pady=2, padx=5)
-        
-        # Audio file
-        ttk.Label(frame, text="Audio file:").grid(row=3, column=0, sticky='w', pady=2)
-        audio_frame = ttk.Frame(frame)
-        audio_frame.grid(row=3, column=1, sticky='we', pady=2)
-        audio_entry = ttk.Entry(audio_frame, width=35)
-        audio_entry.pack(side='left', fill='x', expand=True)
-        ttk.Button(audio_frame, text="Browse", command=lambda: self.browse_audio(audio_entry)).pack(side='right', padx=5)
-
-        ttk.Button(frame, text="Duplicate", 
-           command=lambda: self.duplicate_animal_frame(frame)) \
-       .grid(row=4, column=0, sticky='w', pady=5)
-        
-        # Remove button
-        ttk.Button(frame, text="Remove", command=lambda: self.remove_animal_frame(frame)).grid(row=4, column=1, sticky='e', pady=5)
-        
-        # Store references
-        frame.image_url = image_url_entry
-        frame.title = title_entry
-        frame.word = word_entry
-        frame.audio = audio_entry
-        
-        self.animals.append(frame)
-
+            # Create a group box with frame styling
+            frame = QGroupBox()
+            frame.setStyleSheet("""
+                QGroupBox {
+                    border: 1px solid #999;
+                    border-radius: 4px;
+                    margin-top: 10px;
+                    padding-top: 10px;
+                }
+                QGroupBox::title {
+                    subcontrol-origin: margin;
+                    left: 10px;
+                    padding: 0 5px 0 5px;
+                }
+            """)
+            
+            # Create a grid layout for the frame
+            frame_layout = QGridLayout(frame)
+            frame_layout.setSpacing(5)
+            frame_layout.setContentsMargins(10, 10, 10, 10)
+            
+            # Image URL
+            image_label = QLabel("Image URL:")
+            image_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.image_url_entry = QLineEdit()
+            self.image_url_entry.setFixedWidth(300)
+            
+            frame_layout.addWidget(image_label, 0, 0)
+            frame_layout.addWidget(self.image_url_entry, 0, 1)
+            
+            # Title
+            title_label = QLabel("Title (e.g., 'Cat (قطة)'):")
+            title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.title_entry = QLineEdit()
+            self.title_entry.setFixedWidth(300)
+            
+            frame_layout.addWidget(title_label, 1, 0)
+            frame_layout.addWidget(self.title_entry, 1, 1)
+            
+            # Word to speak
+            word_label = QLabel("Word to speak (Arabic):")
+            word_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            self.word_entry = QLineEdit()
+            self.word_entry.setFixedWidth(300)
+            
+            frame_layout.addWidget(word_label, 2, 0)
+            frame_layout.addWidget(self.word_entry, 2, 1)
+            
+            # Audio file
+            audio_label = QLabel("Audio file:")
+            audio_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            
+            # Create audio frame with horizontal layout
+            audio_widget = QWidget()
+            audio_layout = QHBoxLayout(audio_widget)
+            audio_layout.setContentsMargins(0, 0, 0, 0)
+            
+            self.audio_entry = QLineEdit()
+            browse_button = QPushButton("Browse")
+            browse_button.clicked.connect(lambda: self.browse_audio(self.audio_entry))
+            
+            audio_layout.addWidget(self.audio_entry)
+            audio_layout.addWidget(browse_button)
+            
+            frame_layout.addWidget(audio_label, 3, 0)
+            frame_layout.addWidget(audio_widget, 3, 1)
+            
+            # Button row
+            button_widget = QWidget()
+            button_layout = QHBoxLayout(button_widget)
+            button_layout.setContentsMargins(0, 0, 0, 0)
+            
+            # Duplicate button
+            duplicate_button = QPushButton("Duplicate")
+            duplicate_button.clicked.connect(lambda: self.duplicate_animal_frame(frame))
+            
+            # Remove button
+            remove_button = QPushButton("Remove")
+            remove_button.clicked.connect(lambda: self.remove_animal_frame(frame))
+            
+            button_layout.addWidget(duplicate_button)
+            button_layout.addStretch()
+            button_layout.addWidget(remove_button)
+            
+            frame_layout.addWidget(button_widget, 4, 0, 1, 2)
+            
+            # Store references as properties
+            frame.image_url = self.image_url_entry
+            frame.title = self.title_entry
+            frame.word = self.word_entry
+            frame.audio = self.audio_entry
+            
+            # Add the frame to the container
+            # Insert before the stretch (second to last position)
+            count = self.animals_container_layout.count()
+            self.animals_container_layout.insertWidget(count - 1, frame)
+            
+            # Store in list
+            self.animals.append(frame)
+            
+            return frame
+    
+    def browse_audio(self, audio_entry):
+        """Browse for audio file"""
+        file_name, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Audio File",
+            "",
+            "Audio Files (*.mp3 *.wav *.ogg);;All Files (*.*)"
+        )
+        if file_name:
+            audio_entry.setText(file_name)
+            
     def duplicate_animal_frame(self, source_frame):
         # 1. Get values from source frame
-        image_url = source_frame.image_url.get()
-        title = source_frame.title.get()
-        word = source_frame.word.get()
-        audio = source_frame.audio.get()
+        image_url = source_frame.image_url.text()
+        title = source_frame.title.text()
+        word = source_frame.word.text()
+        audio = source_frame.audio.text()
         
-        # 2. Create new frame (adds at end automatically via pack)
-        new_frame = ttk.Frame(self.animals_container, relief='groove', borderwidth=1)
-        new_frame.pack(fill='x', pady=5, padx=5)
+        # 2. Create new frame
+        new_frame = QGroupBox()
+        new_frame.setStyleSheet("""
+            QGroupBox {
+                border: 1px solid #999;
+                border-radius: 4px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+        
+        # Create layout for the new frame
+        frame_layout = QGridLayout(new_frame)
+        frame_layout.setSpacing(5)
+        frame_layout.setContentsMargins(10, 10, 10, 10)
         
         # Image URL
-        ttk.Label(new_frame, text="Image URL:").grid(row=0, column=0, sticky='w', pady=2)
-        image_url_entry = ttk.Entry(new_frame, width=40)
-        image_url_entry.grid(row=0, column=1, pady=2, padx=5)
+        image_label = QLabel("Image URL:")
+        image_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        image_url_entry = QLineEdit()
+        image_url_entry.setFixedWidth(300)
+        image_url_entry.setText(image_url)  # Set value immediately
+        
+        frame_layout.addWidget(image_label, 0, 0)
+        frame_layout.addWidget(image_url_entry, 0, 1)
         
         # Title
-        ttk.Label(new_frame, text="Title (e.g., 'Cat (قطة)'):").grid(row=1, column=0, sticky='w', pady=2)
-        title_entry = ttk.Entry(new_frame, width=40)
-        title_entry.grid(row=1, column=1, pady=2, padx=5)
+        title_label = QLabel("Title (e.g., 'Cat (قطة)'):")
+        title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        title_entry = QLineEdit()
+        title_entry.setFixedWidth(300)
+        title_entry.setText(title)  # Set value immediately
+        
+        frame_layout.addWidget(title_label, 1, 0)
+        frame_layout.addWidget(title_entry, 1, 1)
         
         # Word to speak
-        ttk.Label(new_frame, text="Word to speak (Arabic):").grid(row=2, column=0, sticky='w', pady=2)
-        word_entry = ttk.Entry(new_frame, width=40)
-        word_entry.grid(row=2, column=1, pady=2, padx=5)
+        word_label = QLabel("Word to speak (Arabic):")
+        word_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        word_entry = QLineEdit()
+        word_entry.setFixedWidth(300)
+        word_entry.setText(word)  # Set value immediately
+        
+        frame_layout.addWidget(word_label, 2, 0)
+        frame_layout.addWidget(word_entry, 2, 1)
         
         # Audio file
-        ttk.Label(new_frame, text="Audio file:").grid(row=3, column=0, sticky='w', pady=2)
-        audio_frame = ttk.Frame(new_frame)
-        audio_frame.grid(row=3, column=1, sticky='we', pady=2)
-        audio_entry = ttk.Entry(audio_frame, width=35)
-        audio_entry.pack(side='left', fill='x', expand=True)
-        ttk.Button(audio_frame, text="Browse", command=lambda: self.browse_audio(audio_entry)).pack(side='right', padx=5)
-
-        ttk.Button(new_frame, text="Duplicate", 
-        command=lambda: self.duplicate_animal_frame(new_frame)) \
-    .grid(row=4, column=0, sticky='w', pady=5)
+        audio_label = QLabel("Audio file:")
+        audio_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        
+        # Create audio widget with horizontal layout
+        audio_widget = QWidget()
+        audio_layout = QHBoxLayout(audio_widget)
+        audio_layout.setContentsMargins(0, 0, 0, 0)
+        
+        audio_entry = QLineEdit()
+        audio_entry.setText(audio)  # Set value immediately
+        
+        browse_button = QPushButton("Browse")
+        browse_button.clicked.connect(lambda: self.browse_audio(audio_entry))
+        
+        audio_layout.addWidget(audio_entry)
+        audio_layout.addWidget(browse_button)
+        
+        frame_layout.addWidget(audio_label, 3, 0)
+        frame_layout.addWidget(audio_widget, 3, 1)
+        
+        # Button row
+        button_widget = QWidget()
+        button_layout = QHBoxLayout(button_widget)
+        button_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Duplicate button
+        duplicate_button = QPushButton("Duplicate")
+        duplicate_button.clicked.connect(lambda: self.duplicate_animal_frame(new_frame))
         
         # Remove button
-        ttk.Button(new_frame, text="Remove", command=lambda: self.remove_animal_frame(new_frame)).grid(row=4, column=1, sticky='e', pady=5)
+        remove_button = QPushButton("Remove")
+        remove_button.clicked.connect(lambda: self.remove_animal_frame(new_frame))
         
-        # Store references 
+        button_layout.addWidget(duplicate_button)
+        button_layout.addStretch()
+        button_layout.addWidget(remove_button)
+        
+        frame_layout.addWidget(button_widget, 4, 0, 1, 2)
+        
+        # Store references as properties on the frame
         new_frame.image_url = image_url_entry
         new_frame.title = title_entry
         new_frame.word = word_entry
         new_frame.audio = audio_entry
         
-        # NOW insert the values
-        image_url_entry.insert(0, image_url)
-        title_entry.insert(0, title)
-        word_entry.insert(0, word)
-        audio_entry.insert(0, audio)
+        # 3. Add the new frame to the container (before the stretch)
+        count = self.animals_container_layout.count()
+        self.animals_container_layout.insertWidget(count - 1, new_frame)
         
-        # Add to tracking list
+        # 4. Add to tracking list
         self.animals.append(new_frame)
+        
+        return new_frame
 
     def remove_animal_frame(self, frame):
-        frame.destroy()
-        self.animals.remove(frame)
+        """Remove an animal frame"""
+        if frame in self.animals:
+            # Remove from layout
+            self.animals_container_layout.removeWidget(frame)
+            # Remove from list
+            self.animals.remove(frame)
+            # Delete the widget
+            frame.deleteLater()
         
     def browse_audio(self, audio_entry):
         filename = filedialog.askopenfilename(
@@ -288,1348 +444,1169 @@ class AnimalLearningGameGenerator:
         if filename:
             audio_entry.delete(0, tk.END)
             audio_entry.insert(0, filename)
-            
+
     def setup_questions_section(self):
         # Add question button
-        ttk.Button(self.questions_frame, text="Add Question", command=self.add_question_frame).pack(pady=5)
+        add_question_button = QPushButton("Add Question")
+        add_question_button.clicked.connect(self.add_question_frame)
+        self.questions_layout.addWidget(add_question_button)
         
-        # Create a frame for the canvas and scrollbar
-        container = ttk.Frame(self.questions_frame)
-        container.pack(fill='both', expand=True, pady=10)
+        # Create scroll area for questions
+        self.questions_scroll_area = QScrollArea()
+        self.questions_scroll_area.setWidgetResizable(True)
+        self.questions_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         
-        # Create a canvas and scrollbar
-        canvas = tk.Canvas(container)
-        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
-        self.questions_container = ttk.Frame(canvas)
+        # Create container widget for the scroll area
+        self.questions_scroll_container = QWidget()
+        self.questions_container_layout = QVBoxLayout(self.questions_scroll_container)
+        self.questions_container_layout.setSpacing(10)
+        self.questions_container_layout.setContentsMargins(5, 5, 5, 5)
         
-        # Configure the canvas
-        self.questions_container.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        # Add a stretch at the end to push frames to the top
+        self.questions_container_layout.addStretch()
         
-        # Create a window in the canvas for the questions container
-        canvas.create_window((0, 0), window=self.questions_container, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        # Set the container as the scroll area's widget
+        self.questions_scroll_area.setWidget(self.questions_scroll_container)
         
-        # Pack the canvas and scrollbar
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        # Add scroll area to questions layout
+        self.questions_layout.addWidget(self.questions_scroll_area)
         
         # Add initial question frame
         self.add_question_frame()
-        
+    
     def add_question_frame(self):
-        frame = ttk.Frame(self.questions_container, relief='groove', borderwidth=1)
-        frame.pack(fill='x', pady=5, padx=5)
+        # Create a group box with frame styling
+        frame = QGroupBox()
+        frame.setStyleSheet("""
+            QGroupBox {
+                border: 1px solid #999;
+                border-radius: 4px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
         
-        # Question image URL
-        ttk.Label(frame, text="Question Image URL (optional):").grid(row=0, column=0, sticky='w', pady=2)
-        image_url_entry = ttk.Entry(frame, width=50)
-        image_url_entry.grid(row=0, column=1, columnspan=2, sticky='we', pady=2, padx=5)
+        # Create a grid layout for the frame
+        frame_layout = QGridLayout(frame)
+        frame_layout.setSpacing(5)
+        frame_layout.setContentsMargins(10, 10, 10, 10)
         
-        # Question text (moved to row 1)
-        ttk.Label(frame, text="Question Text:").grid(row=1, column=0, sticky='w', pady=2)
-        question_text_entry = ttk.Entry(frame, width=50)
-        question_text_entry.grid(row=1, column=1, columnspan=2, sticky='we', pady=2, padx=5)
+        # Question image URL (row 0)
+        image_label = QLabel("Question Image URL (optional):")
+        image_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        image_url_entry = QLineEdit()
         
-        # Answers frame (moved to row 2)
-        answers_frame = ttk.LabelFrame(frame, text="Answers")
-        answers_frame.grid(row=2, column=0, columnspan=3, sticky='we', pady=5, padx=5)
+        frame_layout.addWidget(image_label, 0, 0)
+        frame_layout.addWidget(image_url_entry, 0, 1, 1, 2)
         
-        # Correct answer variable
-        correct_answer_var = tk.StringVar()
+        # Question text (row 1)
+        question_label = QLabel("Question Text:")
+        question_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        question_text_entry = QLineEdit()
+        
+        frame_layout.addWidget(question_label, 1, 0)
+        frame_layout.addWidget(question_text_entry, 1, 1, 1, 2)
+        
+        # Answers section (row 2)
+        answers_label = QLabel("Answers:")
+        answers_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        
+        # Create a widget for answers with vertical layout
+        answers_widget = QWidget()
+        answers_widget.setStyleSheet("border: 1px solid #ccc; border-radius: 3px; padding: 5px;")
+        self.answers_layout = QVBoxLayout(answers_widget)
+        self.answers_layout.setSpacing(5)
+        
+        # Create button group for radio buttons
+        button_group = QButtonGroup(frame)
+        button_group.setExclusive(True)
         
         # Store answer entries and radio buttons
         answer_entries = []
         radio_buttons = []
         
-        # Function to add answer
-        def add_answer_row():
-            row = len(answer_entries)
+        # Function to add answer row
+        def add_answer_row(answer_text=""):
+            # Create widget for this answer row
+            answer_row = QWidget()
+            row_layout = QHBoxLayout(answer_row)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            
             # Radio button for correct answer
-            rb = ttk.Radiobutton(answers_frame, variable=correct_answer_var, value=str(row))
-            rb.grid(row=row, column=0, padx=5)
+            radio_button = QRadioButton()
+            radio_button.setFixedWidth(20)
+            button_group.addButton(radio_button)
+            
             # Answer entry
-            entry = ttk.Entry(answers_frame, width=40)
-            entry.grid(row=row, column=1, pady=2, padx=5, sticky='we')
+            entry = QLineEdit()
+            entry.setPlaceholderText("Enter answer text...")
+            if answer_text:
+                entry.setText(answer_text)
             
-            # Create the remove button first
-            btn = ttk.Button(answers_frame, text="Remove")
-            btn.grid(row=row, column=2, padx=5)
+            # Remove button
+            remove_button = QPushButton("Remove")
+            remove_button.setFixedWidth(80)
             
-            # Now configure the command with the button reference
-            btn.configure(command=lambda: remove_answer_row(rb, entry, btn))
+            # Connect remove button
+            remove_button.clicked.connect(lambda: remove_answer_row(answer_row, radio_button, entry))
             
+            # Add widgets to row layout
+            row_layout.addWidget(radio_button)
+            row_layout.addWidget(entry)
+            row_layout.addWidget(remove_button)
+            row_layout.setStretch(1, 1)  # Make entry expand
+            
+            # Add to answers layout
+            self.answers_layout.addWidget(answer_row)
+            
+            # Store references
             answer_entries.append(entry)
-            radio_buttons.append(rb)
+            radio_buttons.append(radio_button)
             
-        def remove_answer_row(rb, entry, btn):
-            idx = answer_entries.index(entry)
-            answer_entries.remove(entry)
-            radio_buttons.remove(rb)
-            rb.destroy()
-            entry.destroy()
-            btn.destroy()
-            # Update radio button values
-            for i, rb in enumerate(radio_buttons):
-                rb.config(value=str(i))
-            # Update correct answer if needed
-            if correct_answer_var.get() == str(idx):
-                correct_answer_var.set("")
-                
+            return answer_row
+        
+        # Function to remove answer row
+        def remove_answer_row(row_widget, radio_button, entry):
+            # Remove from layout
+            self.answers_layout.removeWidget(row_widget)
+            
+            # Remove from lists
+            if entry in answer_entries:
+                answer_entries.remove(entry)
+            if radio_button in radio_buttons:
+                radio_buttons.remove(radio_button)
+                button_group.removeButton(radio_button)
+            
+            # Delete widgets
+            row_widget.deleteLater()
+            
+            # Update radio button indices if needed
+            # (Not needed in PySide6 as we use QButtonGroup)
+        
         # Add answer button
-        add_answer_btn = ttk.Button(answers_frame, text="Add Answer", command=add_answer_row)
-        add_answer_btn.grid(row=0, column=2, padx=5)
+        add_answer_button = QPushButton("Add Answer")
+        add_answer_button.clicked.connect(lambda: add_answer_row())
+        self.answers_layout.addWidget(add_answer_button)
         
         # Add initial answers
         for _ in range(2):
             add_answer_row()
-            
+        
+        # Add answers section to main frame layout
+        frame_layout.addWidget(answers_label, 2, 0, Qt.AlignTop)
+        frame_layout.addWidget(answers_widget, 2, 1, 1, 2)
+        
+        # Button row (row 3)
+        button_widget = QWidget()
+        button_layout = QHBoxLayout(button_widget)
+        button_layout.setContentsMargins(0, 0, 0, 0)
+        
         # Remove question button
-        ttk.Button(frame, text="Remove Question", command=lambda: self.remove_question_frame(frame)).grid(row=4, column=2, sticky='e', pady=5)
-        ttk.Button(frame, text="Add Answer", command=lambda: add_answer_row()).grid(row=4, column=3, sticky='e', pady=5)
+        remove_question_button = QPushButton("Remove Question")
+        remove_question_button.clicked.connect(lambda: self.remove_question_frame(frame))
         
-        # Configure grid weights
-        frame.columnconfigure(1, weight=1)
-        answers_frame.columnconfigure(1, weight=1)
+        # Another add answer button for convenience
+        add_answer_button2 = QPushButton("Add Answer")
+        add_answer_button2.clicked.connect(lambda: add_answer_row())
         
-        # Store references
+        button_layout.addWidget(remove_question_button)
+        button_layout.addStretch()
+        button_layout.addWidget(add_answer_button2)
+        
+        frame_layout.addWidget(button_widget, 3, 0, 1, 3)
+        
+        # Set column stretch
+        frame_layout.setColumnStretch(1, 1)
+        
+        # Store references as properties on the frame
         frame.image_url = image_url_entry
         frame.question_text = question_text_entry
         frame.answer_entries = answer_entries
         frame.radio_buttons = radio_buttons
-        frame.correct_answer_var = correct_answer_var
-        frame.add_answer_row = add_answer_row
-        frame.remove_answer_row = remove_answer_row
+        frame.button_group = button_group
+        frame.answers_widget = answers_widget
+        frame.answers_layout = self.answers_layout
+        frame.add_answer_row = lambda text="": add_answer_row(text)
+        frame.remove_answer_row = lambda row, radio, entry: remove_answer_row(row, radio, entry)
         
+        # Add the frame to the container
+        count = self.questions_container_layout.count()
+        self.questions_container_layout.insertWidget(count - 1, frame)
+        
+        # Store in list
         self.questions.append(frame)
         
+        return frame
+    
     def remove_question_frame(self, frame):
-        frame.destroy()
-        self.questions.remove(frame)
+        """Remove a question frame"""
+        if frame in self.questions:
+            # Remove from layout
+            self.questions_container_layout.removeWidget(frame)
+            # Remove from list
+            self.questions.remove(frame)
+            # Delete the widget
+            frame.deleteLater()
 
-    ### dialouges ###
-
-    def setup_dialouges_section(self):
-        # Add dialouge button
-        ttk.Button(self.dialouges_frame, text="Add Dialogue", command=self.add_dialogue_frame).pack(pady=5)
+    def setup_dialogues_section(self):
+        """Setup the dialogues section with scrollable container"""
+        # Add dialogue button
+        add_dialogue_button = QPushButton("Add Dialogue")
+        add_dialogue_button.clicked.connect(self.add_dialogue_frame)
+        self.dialogues_layout.addWidget(add_dialogue_button)
         
-        # Create a frame for the canvas and scrollbar
-        container = ttk.Frame(self.dialouges_frame)
-        container.pack(fill='both', expand=True, pady=10)
+        # Create scroll area for dialogues
+        self.dialogues_scroll_area = QScrollArea()
+        self.dialogues_scroll_area.setWidgetResizable(True)
+        self.dialogues_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         
-        # Create a canvas and scrollbar
-        canvas = tk.Canvas(container)
-        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
-        self.dialouges_container = ttk.Frame(canvas)
+        # Create container widget for the scroll area
+        self.dialogues_scroll_container = QWidget()
+        self.dialogues_container_layout = QVBoxLayout(self.dialogues_scroll_container)
+        self.dialogues_container_layout.setSpacing(10)
+        self.dialogues_container_layout.setContentsMargins(5, 5, 5, 5)
         
-        # Configure the canvas
-        self.dialouges_container.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        # Add a stretch at the end to push frames to the top
+        self.dialogues_container_layout.addStretch()
         
-        # Create a window in the canvas for the dialogue container
-        canvas.create_window((0, 0), window=self.dialouges_container, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        # Set the container as the scroll area's widget
+        self.dialogues_scroll_area.setWidget(self.dialogues_scroll_container)
         
-        # Pack the canvas and scrollbar
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        # Add scroll area to dialogues layout
+        self.dialogues_layout.addWidget(self.dialogues_scroll_area)
         
         # Add initial dialogue frame
         self.add_dialogue_frame()
-
-    def add_dialogue_frame(self):
+    
+    def add_dialogue_frame(self, loaded_title="", loaded_lines=None):
+        """Add a new dialogue frame (optionally with loaded data)"""
+        if loaded_lines is None:
+            loaded_lines = []
+        
+        # Create dialogue data structure
         dialogue_data = {
-            "title":"",
+            "title": loaded_title,
             "lines": []
         }
         self.dialouges.append(dialogue_data)
-
-        # ================= Dialogue Frame =================
-        dialogue_frame = ttk.LabelFrame(
-            self.dialouges_container,
-            text=f"Dialogue {len(self.dialouges)}",
-            padding=10
+        
+        # Create dialogue group box
+        dialogue_frame = QGroupBox(f"Dialogue {len(self.dialouges)}")
+        dialogue_frame.setStyleSheet("""
+            QGroupBox {
+                border: 2px solid #666;
+                border-radius: 5px;
+                margin-top: 10px;
+                padding-top: 15px;
+                font-weight: bold;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+        
+        # Create layout for dialogue frame
+        dialogue_layout = QVBoxLayout(dialogue_frame)
+        dialogue_layout.setSpacing(10)
+        dialogue_layout.setContentsMargins(10, 15, 10, 10)
+        
+        # Dialogue Title
+        title_label = QLabel("Dialogue Title:")
+        title_label.setAlignment(Qt.AlignLeft)
+        title_entry = QLineEdit()
+        title_entry.setText(loaded_title)
+        
+        # Connect title changes to data
+        title_entry.textChanged.connect(
+            lambda text: dialogue_data.update({"title": text})
         )
-        dialogue_frame.pack(fill="x", pady=10, padx=5)
-
-        # ================= Dialogue Title =================
-        ttk.Label(dialogue_frame, text="Dialogue Title:").pack(anchor="w", padx=5)
-        title_entry = ttk.Entry(dialogue_frame, width=40)
-        title_entry.pack(fill="x", padx=5, pady=(0, 10))
-        title_entry.bind(
-            "<KeyRelease>",
-            lambda e: dialogue_data.update({"title": title_entry.get()})
-        )
-
-        # ================= Remove Dialogue =================
-        def remove_dialogue():
-            self.dialouges.remove(dialogue_data)
-            dialogue_frame.destroy()
-
-        ttk.Button(
-            dialogue_frame,
-            text="Delete Dialogue",
-            command=remove_dialogue
-        ).pack(anchor="e", pady=5)
-
-        # ================= Lines Container =================
-        lines_container = ttk.Frame(dialogue_frame)
-        lines_container.pack(fill="x")
-
-        # ================= duplicate Line =================
-        def duplicate_line(character_name,image_url,position,text,translation,audio):
-
-            line_data = {
-                "character_name": character_name,
+        
+        dialogue_layout.addWidget(title_label)
+        dialogue_layout.addWidget(title_entry)
+        
+        # Create container for lines
+        lines_container = QWidget()
+        lines_container_layout = QVBoxLayout(lines_container)
+        lines_container_layout.setSpacing(5)
+        lines_container_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Store references
+        dialogue_frame.dialogue_data = dialogue_data
+        dialogue_frame.title_entry = title_entry
+        dialogue_frame.lines_container = lines_container
+        dialogue_frame.lines_container_layout = lines_container_layout
+        
+        # Function to add a line
+        def add_line(line_data=None):
+            if line_data is None:
+                line_data = {
+                    "character_name": "",
+                    "image": "",
+                    "position": "left",
+                    "text": "",
+                    "translation": "",
+                    "audio": ""
+                }
+            
+            dialogue_data["lines"].append(line_data)
+            
+            # Create line frame
+            line_frame = QFrame()
+            line_frame.setStyleSheet("""
+                QFrame {
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    background-color: #f8f8f8;
+                }
+            """)
+            
+            line_layout = QGridLayout(line_frame)
+            line_layout.setSpacing(8)
+            line_layout.setContentsMargins(10, 10, 10, 10)
+            
+            # Character Name
+            char_label = QLabel("Character Name:")
+            char_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+            char_entry = QLineEdit()
+            char_entry.setText(line_data.get("character_name", ""))
+            char_entry.textChanged.connect(
+                lambda text, ld=line_data: ld.update({"character_name": text})
+            )
+            
+            line_layout.addWidget(char_label, 0, 0)
+            line_layout.addWidget(char_entry, 0, 1, 1, 3)
+            
+            # Image URL
+            image_label = QLabel("Image URL:")
+            image_label.setAlignment(Qt.AlignLeft)
+            image_entry = QLineEdit()
+            image_entry.setText(line_data.get("image", ""))
+            image_entry.textChanged.connect(
+                lambda text, ld=line_data: ld.update({"image": text})
+            )
+            
+            line_layout.addWidget(image_label, 1, 0)
+            line_layout.addWidget(image_entry, 1, 1)
+            
+            # Position
+            position_label = QLabel("Position:")
+            position_label.setAlignment(Qt.AlignLeft)
+            position_combo = QComboBox()
+            position_combo.addItems(["left", "right"])
+            position_combo.setCurrentText(line_data.get("position", "left"))
+            position_combo.currentTextChanged.connect(
+                lambda text, ld=line_data: ld.update({"position": text})
+            )
+            
+            line_layout.addWidget(position_label, 1, 2)
+            line_layout.addWidget(position_combo, 1, 3)
+            
+            # Dialogue Text
+            text_label = QLabel("Dialogue Text:")
+            text_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+            text_edit = QTextEdit()
+            text_edit.setMaximumHeight(80)
+            text_edit.setPlainText(line_data.get("text", ""))
+            text_edit.textChanged.connect(
+                lambda ld=line_data: ld.update({"text": text_edit.toPlainText().strip()})
+            )
+            
+            line_layout.addWidget(text_label, 2, 0)
+            line_layout.addWidget(text_edit, 2, 1, 1, 3)
+            
+            # Dialogue Text Translation
+            translation_label = QLabel("Translation:")
+            translation_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+            translation_edit = QTextEdit()
+            translation_edit.setMaximumHeight(80)
+            translation_edit.setPlainText(line_data.get("translation", ""))
+            translation_edit.textChanged.connect(
+                lambda ld=line_data: ld.update({"translation": translation_edit.toPlainText().strip()})
+            )
+            
+            line_layout.addWidget(translation_label, 3, 0)
+            line_layout.addWidget(translation_edit, 3, 1, 1, 3)
+            
+            # Audio file
+            audio_label = QLabel("Audio:")
+            audio_label.setAlignment(Qt.AlignLeft)
+            audio_widget = QWidget()
+            audio_layout = QHBoxLayout(audio_widget)
+            audio_layout.setContentsMargins(0, 0, 0, 0)
+            
+            audio_entry = QLineEdit()
+            audio_entry.setText(line_data.get("audio", ""))
+            audio_entry.textChanged.connect(
+                lambda text, ld=line_data: ld.update({"audio": text})
+            )
+            
+            browse_button = QPushButton("Browse")
+            browse_button.clicked.connect(
+                lambda checked, entry=audio_entry: self.browse_audio(entry)
+            )
+            
+            audio_layout.addWidget(audio_entry)
+            audio_layout.addWidget(browse_button)
+            
+            line_layout.addWidget(audio_label, 4, 0)
+            line_layout.addWidget(audio_widget, 4, 1, 1, 2)
+            
+            # Button row
+            button_widget = QWidget()
+            button_layout = QHBoxLayout(button_widget)
+            button_layout.setContentsMargins(0, 0, 0, 0)
+            
+            # Duplicate button
+            duplicate_button = QPushButton("Duplicate")
+            duplicate_button.clicked.connect(
+                lambda: self.duplicate_dialogue_line(
+                    line_frame, char_entry.text(), image_entry.text(),
+                    position_combo.currentText(), text_edit.toPlainText(),
+                    translation_edit.toPlainText(), audio_entry.text()
+                )
+            )
+            
+            # Delete button
+            delete_button = QPushButton("Delete Line")
+            delete_button.clicked.connect(
+                lambda: self.remove_dialogue_line(line_frame, dialogue_data, line_data)
+            )
+            
+            button_layout.addWidget(duplicate_button)
+            button_layout.addStretch()
+            button_layout.addWidget(delete_button)
+            
+            line_layout.addWidget(button_widget, 5, 0, 1, 4)
+            
+            # Set column stretch
+            line_layout.setColumnStretch(1, 1)
+            line_layout.setColumnStretch(3, 1)
+            
+            # Store references
+            line_frame.char_entry = char_entry
+            line_frame.image_entry = image_entry
+            line_frame.position_combo = position_combo
+            line_frame.text_edit = text_edit
+            line_frame.translation_edit = translation_edit
+            line_frame.audio_entry = audio_entry
+            line_frame.line_data = line_data
+            
+            # Add to lines container
+            lines_container_layout.addWidget(line_frame)
+            
+            return line_frame
+        
+        # Function to duplicate a line
+        def duplicate_line(char_name, image_url, position, text, translation, audio):
+            new_line_data = {
+                "character_name": char_name,
                 "image": image_url,
                 "position": position,
                 "text": text,
-                "translation":translation,
+                "translation": translation,
                 "audio": audio
             }
-            dialogue_data["lines"].append(line_data)
-
-            line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
-            line_frame.pack(fill="x", pady=5)
-
-            # ================= Character Name =================
-            ttk.Label(line_frame, text="Character Name:").grid(row=0, column=0, sticky="nw")
-            character_name_entry = ttk.Entry(line_frame, width=40)
-            character_name_entry.grid(row=0, column=1, padx=5)
-            character_name_entry.bind(
-                "<KeyRelease>",
-                lambda e: line_data.update({"character_name": character_name_entry.get()})
-            )
-
-            # ---- Image ----
-            ttk.Label(line_frame, text="Image URL:").grid(row=1, column=0, sticky="w")
-            image_entry = ttk.Entry(line_frame, width=40)
-            image_entry.grid(row=1, column=1, padx=5)
-            image_entry.bind(
-                "<KeyRelease>",
-                lambda e: line_data.update({"image": image_entry.get()})
-            )
-
-            # ---- Position ----
-            ttk.Label(line_frame, text="Position:").grid(row=1, column=2, padx=5)
-            position_var = tk.StringVar(value="left")
-            position_menu = ttk.Combobox(
-                line_frame,
-                textvariable=position_var,
-                values=["left", "right"],
-                state="readonly",
-                width=7
-            )
-            position_menu.grid(row=1, column=3)
-            position_var.trace_add(
-                "write",
-                lambda *args: line_data.update({"position": position_var.get()})
-            )
-
-            # ---- Text ----
-            ttk.Label(line_frame, text="Dialogue Text:").grid(row=2, column=0, sticky="nw")
-            text_box = tk.Text(line_frame, height=3, width=60)
-            text_box.grid(row=2, column=1, columnspan=3, pady=5)
-
-            def update_text(event):
-                line_data["text"] = text_box.get("1.0", "end").strip()
-
-            text_box.bind("<KeyRelease>", update_text)
-
-            # ---- Text translation ----
-            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=3, column=0, sticky="nw")
-            text_translation_box = tk.Text(line_frame, height=3, width=60)
-            text_translation_box.grid(row=3, column=1, columnspan=3, pady=5)
-
-            def update_translation(event):
-                line_data["translation"] = text_translation_box.get("1.0", "end").strip()
-
-            text_translation_box.bind("<KeyRelease>", update_translation)
-
-            # ---- Audio ----
-            ttk.Label(line_frame, text="Audio:").grid(row=4, column=0, sticky="w")
-            audio_entry = ttk.Entry(line_frame, width=40)
-            audio_entry.grid(row=4, column=1, padx=5)
-
-            ttk.Button(
-                line_frame,
-                text="Browse",
-                command=lambda: (
-                    self.browse_audio(audio_entry),
-                    line_data.update({"audio": audio_entry.get()})
-                )
-            ).grid(row=4, column=2)
-
-            # ---- Delete Line ----
-            def remove_line():
-                dialogue_data["lines"].remove(line_data)
-                line_frame.destroy()
-
-            ttk.Button(
-                line_frame,
-                text="Delete Line",
-                command=remove_line
-            ).grid(row=5, column=3, padx=5)
-
-            # NOW insert the values
-            character_name_entry.insert(0, character_name)
-            image_entry.insert(0, image_url)
-            position_var.set(position)  
-            text_box.insert("1.0", text) 
-            text_translation_box.insert("1.0", translation)
-            audio_entry.insert(0, audio)
-            
-            ttk.Button(line_frame, text="Duplicate", 
-            command=lambda: duplicate_line(character_name_entry.get(),image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
-        .grid(row=5, column=2, sticky='w', pady=5) 
-
-        # ================= Add Line =================
-        def add_line():
-            line_data = {
-                "character_name": "",
-                "image": "",
-                "position": "left",
-                "text": "",
-                "translation":"",
-                "audio": ""
-            }
-            dialogue_data["lines"].append(line_data)
-
-            line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
-            line_frame.pack(fill="x", pady=5)
-
-            # ================= Character Name =================
-            ttk.Label(line_frame, text="Character Name:").grid(row=0, column=0, sticky="nw")
-            character_name_entry = ttk.Entry(line_frame,width=40)
-            character_name_entry.grid(row=0, column=1, padx=5)
-            character_name_entry.bind(
-                "<KeyRelease>",
-                lambda e: line_data.update({"character_name": character_name_entry.get()})
-            )
-
-            # ---- Image ----
-            ttk.Label(line_frame, text="Image URL:").grid(row=1, column=0, sticky="w")
-            image_entry = ttk.Entry(line_frame, width=40)
-            image_entry.grid(row=1, column=1, padx=5)
-            image_entry.bind(
-                "<KeyRelease>",
-                lambda e: line_data.update({"image": image_entry.get()})
-            )
-
-            # ---- Position ----
-            ttk.Label(line_frame, text="Position:").grid(row=1, column=2, padx=5)
-            position_var = tk.StringVar(value="left")
-            position_menu = ttk.Combobox(
-                line_frame,
-                textvariable=position_var,
-                values=["left", "right"],
-                state="readonly",
-                width=7
-            )
-            position_menu.grid(row=1, column=3)
-            position_var.trace_add(
-                "write",
-                lambda *args: line_data.update({"position": position_var.get()})
-            )
-
-            # ---- Text ----
-            ttk.Label(line_frame, text="Dialogue Text:").grid(row=2, column=0, sticky="nw")
-            text_box = tk.Text(line_frame,
-                                height=3, width=60)
-            text_box.grid(row=2, column=1, columnspan=3, pady=5)
-
-            def update_text(event):
-                line_data["text"] = text_box.get("1.0", "end").strip()
-
-            text_box.bind("<KeyRelease>", update_text)
-
-
-            # ---- Text translation ----
-            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=3, column=0, sticky="nw")
-            text_translation_box = tk.Text(line_frame, height=3, width=60)
-            text_translation_box.grid(row=3, column=1, columnspan=3, pady=5)
-
-            def update_translation(event):
-                line_data["translation"] = text_translation_box.get("1.0", "end").strip()
-
-            text_translation_box.bind("<KeyRelease>", update_translation)
-
-            # ---- Audio ----
-            ttk.Label(line_frame, text="Audio:").grid(row=4, column=0, sticky="w")
-            audio_entry = ttk.Entry(line_frame, width=40)
-            audio_entry.grid(row=4, column=1, padx=5)
-
-            ttk.Button(
-                line_frame,
-                text="Browse",
-                command=lambda: (
-                    self.browse_audio(audio_entry),
-                    line_data.update({"audio": audio_entry.get()})
-                )
-            ).grid(row=4, column=2)
-
-            # ---- Delete Line ----
-            def remove_line():
-                dialogue_data["lines"].remove(line_data)
-                line_frame.destroy()
-
-            ttk.Button(
-                line_frame,
-                text="Delete Line",
-                command=remove_line
-            ).grid(row=5, column=3, padx=5)
-
-            ttk.Button(line_frame, text="Duplicate", 
-            command=lambda: duplicate_line(character_name_entry.get(),image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
-        .grid(row=5, column=2, sticky='w', pady=5) 
-
-        # ================= Buttons =================
-        ttk.Button(
-            dialogue_frame,
-            text="Add Dialogue Line",
-            command=add_line
-        ).pack(pady=5)
-
-        # Add first line by default
-        add_line()
-
-    def add_dialogue_frame_loaded_config(self,loaded_title,loaded_lines):
-        dialogue_data = {
-            "title":loaded_title,
-            "lines": []
-        }
-        self.dialouges.append(dialogue_data)
-
-        # ================= Dialogue Frame =================
-        dialogue_frame = ttk.LabelFrame(
-            self.dialouges_container,
-            text=f"Dialogue {len(self.dialouges)}",
-            padding=10
-        )
-        dialogue_frame.pack(fill="x", pady=10, padx=5)
-
-        # ================= Dialogue Title =================
-        ttk.Label(dialogue_frame, text="Dialogue Title:").pack(anchor="w", padx=5)
-        title_entry = ttk.Entry(dialogue_frame, width=40)
-        title_entry.pack(fill="x", padx=5, pady=(0, 10))
-        title_entry.bind(
-            "<KeyRelease>",
-            lambda e: dialogue_data.update({"title": title_entry.get()})
-        )
-        # populate with loaded title
-        title_entry.insert(0, loaded_title)
-
-        # ================= Remove Dialogue =================
-        def remove_dialogue():
-            self.dialouges.remove(dialogue_data)
-            dialogue_frame.destroy()
-
-        ttk.Button(
-            dialogue_frame,
-            text="Delete Dialogue",
-            command=remove_dialogue
-        ).pack(anchor="e", pady=5)
-
-        # ================= Lines Container =================
-        lines_container = ttk.Frame(dialogue_frame)
-        lines_container.pack(fill="x")
-
-        # ================= duplicate Line =================
-        def duplicate_line(character_name,image_url,position,text,translation,audio):
-
-            line_data = {
-                "character_name": character_name,
-                "image": image_url,
-                "position": position,
-                "text": text,
-                "translation":translation,
-                "audio": audio
-            }
-            dialogue_data["lines"].append(line_data)
-
-            line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
-            line_frame.pack(fill="x", pady=5)
-
-            # ================= Character Name =================
-            ttk.Label(line_frame, text="Character Name:").grid(row=0, column=0, sticky="nw")
-            character_name_entry = ttk.Entry(line_frame, width=40)
-            character_name_entry.grid(row=0, column=1, padx=5)
-            character_name_entry.bind(
-                "<KeyRelease>",
-                lambda e: line_data.update({"character_name": character_name_entry.get()})
-            )
-
-            # ---- Image ----
-            ttk.Label(line_frame, text="Image URL:").grid(row=1, column=0, sticky="w")
-            image_entry = ttk.Entry(line_frame, width=40)
-            image_entry.grid(row=1, column=1, padx=5)
-            image_entry.bind(
-                "<KeyRelease>",
-                lambda e: line_data.update({"image": image_entry.get()})
-            )
-
-            # ---- Position ----
-            ttk.Label(line_frame, text="Position:").grid(row=1, column=2, padx=5)
-            position_var = tk.StringVar(value="left")
-            position_menu = ttk.Combobox(
-                line_frame,
-                textvariable=position_var,
-                values=["left", "right"],
-                state="readonly",
-                width=7
-            )
-            position_menu.grid(row=1, column=3)
-            position_var.trace_add(
-                "write",
-                lambda *args: line_data.update({"position": position_var.get()})
-            )
-
-            # ---- Text ----
-            ttk.Label(line_frame, text="Dialogue Text:").grid(row=2, column=0, sticky="nw")
-            text_box = tk.Text(line_frame, height=3, width=60)
-            text_box.grid(row=2, column=1, columnspan=3, pady=5)
-
-            def update_text(event):
-                line_data["text"] = text_box.get("1.0", "end").strip()
-
-            text_box.bind("<KeyRelease>", update_text)
-
-            # ---- Text translation ----
-            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=3, column=0, sticky="nw")
-            text_translation_box = tk.Text(line_frame, height=3, width=60)
-            text_translation_box.grid(row=3, column=1, columnspan=3, pady=5)
-
-            def update_translation(event):
-                line_data["translation"] = text_translation_box.get("1.0", "end").strip()
-
-            text_translation_box.bind("<KeyRelease>", update_translation)
-
-            # ---- Audio ----
-            ttk.Label(line_frame, text="Audio:").grid(row=4, column=0, sticky="w")
-            audio_entry = ttk.Entry(line_frame, width=40)
-            audio_entry.grid(row=4, column=1, padx=5)
-
-            ttk.Button(
-                line_frame,
-                text="Browse",
-                command=lambda: (
-                    self.browse_audio(audio_entry),
-                    line_data.update({"audio": audio_entry.get()})
-                )
-            ).grid(row=4, column=2)
-
-            # ---- Delete Line ----
-            def remove_line():
-                dialogue_data["lines"].remove(line_data)
-                line_frame.destroy()
-
-            ttk.Button(
-                line_frame,
-                text="Delete Line",
-                command=remove_line
-            ).grid(row=5, column=3, padx=5)
-
-            # NOW insert the values
-            character_name_entry.insert(0, character_name)
-            image_entry.insert(0, image_url)
-            position_var.set(position)  
-            text_box.insert("1.0", text) 
-            text_translation_box.insert("1.0", translation)
-            audio_entry.insert(0, audio)
-            
-            ttk.Button(line_frame, text="Duplicate", 
-            command=lambda: duplicate_line(character_name_entry.get(),image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
-        .grid(row=5, column=2, sticky='w', pady=5) 
-            
-        # ================= Add Line =================
-        def add_line():
-            line_data = {
-                "character_name": "",
-                "image": "",
-                "position": "left",
-                "text": "",
-                "translation":"",
-                "audio": ""
-            }
-            dialogue_data["lines"].append(line_data)
-
-            line_frame = ttk.Frame(lines_container, padding=5, relief="solid")
-            line_frame.pack(fill="x", pady=5)
-
-            # ================= Character Name =================
-            ttk.Label(line_frame, text="Character Name:").grid(row=0, column=0, sticky="nw")
-            character_name_entry = ttk.Entry(line_frame, width=40)
-            character_name_entry.grid(row=0, column=1, padx=5)
-            character_name_entry.bind(
-                "<KeyRelease>",
-                lambda e: line_data.update({"character_name": character_name_entry.get()})
-            )
-
-            # ---- Image ----
-            ttk.Label(line_frame, text="Image URL:").grid(row=1, column=0, sticky="w")
-            image_entry = ttk.Entry(line_frame, width=40)
-            image_entry.grid(row=1, column=1, padx=5)
-            image_entry.bind(
-                "<KeyRelease>",
-                lambda e: line_data.update({"image": image_entry.get()})
-            )
-
-            # ---- Position ----
-            ttk.Label(line_frame, text="Position:").grid(row=1, column=2, padx=5)
-            position_var = tk.StringVar(value="left")
-            position_menu = ttk.Combobox(
-                line_frame,
-                textvariable=position_var,
-                values=["left", "right"],
-                state="readonly",
-                width=7
-            )
-            position_menu.grid(row=1, column=3)
-            position_var.trace_add(
-                "write",
-                lambda *args: line_data.update({"position": position_var.get()})
-            )
-
-            # ---- Text ----
-            ttk.Label(line_frame, text="Dialogue Text:").grid(row=2, column=0, sticky="nw")
-            text_box = tk.Text(line_frame, height=3, width=60)
-            text_box.grid(row=2, column=1, columnspan=3, pady=5)
-
-            def update_text(event):
-                line_data["text"] = text_box.get("1.0", "end").strip()
-
-            text_box.bind("<KeyRelease>", update_text)
-
-            # ---- Text translation ----
-            ttk.Label(line_frame, text="Dialogue Text Translation:").grid(row=3, column=0, sticky="nw")
-            text_translation_box = tk.Text(line_frame, height=3, width=60)
-            text_translation_box.grid(row=3, column=1, columnspan=3, pady=5)
-
-            def update_translation(event):
-                line_data["translation"] = text_translation_box.get("1.0", "end").strip()
-
-            text_translation_box.bind("<KeyRelease>", update_translation)
-
-            # ---- Audio ----
-            ttk.Label(line_frame, text="Audio:").grid(row=4, column=0, sticky="w")
-            audio_entry = ttk.Entry(line_frame, width=40)
-            audio_entry.grid(row=4, column=1, padx=5)
-
-            ttk.Button(
-                line_frame,
-                text="Browse",
-                command=lambda: (
-                    self.browse_audio(audio_entry),
-                    line_data.update({"audio": audio_entry.get()})
-                )
-            ).grid(row=4, column=2)
-
-            # ---- Delete Line ----
-            def remove_line():
-                dialogue_data["lines"].remove(line_data)
-                line_frame.destroy()
-
-            ttk.Button(
-                line_frame,
-                text="Delete Line",
-                command=remove_line
-            ).grid(row=5, column=3, padx=5)
-
-            ttk.Button(line_frame, text="Duplicate", 
-            command=lambda: duplicate_line(character_name_entry.get(),image_entry.get(),position_var.get(),text_box.get("1.0", "end-1c"),text_translation_box.get("1.0", "end-1c"),audio_entry.get())) \
-        .grid(row=5, column=2, sticky='w', pady=5) 
-
-        # ================= Buttons =================
-        ttk.Button(
-            dialogue_frame,
-            text="Add Dialogue Line",
-            command=add_line
-        ).pack(pady=5)
+            add_line(new_line_data)
+        
+        # Store duplicate function
+        dialogue_frame.duplicate_line = duplicate_line
+        
+        # Add initial lines if any
         for loaded_line in loaded_lines:
-            # Add loaded line using function duplicate line
-            duplicate_line(loaded_line["character_name"],loaded_line["image"],loaded_line["position"],loaded_line["text"],loaded_line["translation"],loaded_line["audio"])
-
+            add_line(loaded_line)
+        
+        # Add lines container to dialogue layout
+        dialogue_layout.addWidget(lines_container)
+        
+        # Button row for dialogue
+        dialogue_button_widget = QWidget()
+        dialogue_button_layout = QHBoxLayout(dialogue_button_widget)
+        dialogue_button_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Add line button
+        add_line_button = QPushButton("Add Dialogue Line")
+        add_line_button.clicked.connect(lambda: add_line())
+        
+        # Remove dialogue button
+        remove_dialogue_button = QPushButton("Delete Dialogue")
+        remove_dialogue_button.clicked.connect(
+            lambda: self.remove_dialogue_frame(dialogue_frame, dialogue_data)
+        )
+        
+        dialogue_button_layout.addWidget(add_line_button)
+        dialogue_button_layout.addStretch()
+        dialogue_button_layout.addWidget(remove_dialogue_button)
+        
+        dialogue_layout.addWidget(dialogue_button_widget)
+        
+        # Add dialogue frame to container
+        count = self.dialogues_container_layout.count()
+        self.dialogues_container_layout.insertWidget(count - 1, dialogue_frame)
+        
+        return dialogue_frame
+    
+    def duplicate_dialogue_line(self, source_frame, char_name, image_url, position, text, translation, audio):
+        """Duplicate a dialogue line (called from within a line frame)"""
+        # Find the parent dialogue frame
+        parent_widget = source_frame.parent().parent().parent()
+        if hasattr(parent_widget, 'duplicate_line'):
+            parent_widget.duplicate_line(char_name, image_url, position, text, translation, audio)
+    
+    def remove_dialogue_line(self, line_frame, dialogue_data, line_data):
+        """Remove a dialogue line"""
+        if line_data in dialogue_data["lines"]:
+            dialogue_data["lines"].remove(line_data)
+            line_frame.setParent(None)
+            line_frame.deleteLater()
+    
+    def remove_dialogue_frame(self, dialogue_frame, dialogue_data):
+        """Remove a dialogue frame"""
+        if dialogue_data in self.dialogues:
+            self.dialogues.remove(dialogue_data)
+            dialogue_frame.setParent(None)
+            dialogue_frame.deleteLater()
+    
+    def add_dialogue_frame_loaded_config(self, loaded_title, loaded_lines):
+        """Add dialogue frame with loaded configuration"""
+        return self.add_dialogue_frame(loaded_title, loaded_lines)
+    
     def setup_reading_passages_section(self):
-        # Add reading_passage button
-        ttk.Button(self.reading_passages_frame, text="Add Dialogue", command=self.add_reading_passage_frame).pack(pady=5)
+        """Setup the reading passages section with scrollable container"""
+        # Add reading passage button (Note: Fixed button text from "Add Dialogue" to "Add Reading Passage")
+        add_passage_button = QPushButton("Add Reading Passage")
+        add_passage_button.clicked.connect(self.add_reading_passage_frame)
+        self.reading_passages_layout.addWidget(add_passage_button)
         
-        # Create a frame for the canvas and scrollbar
-        container = ttk.Frame(self.reading_passages_frame)
-        container.pack(fill='both', expand=True, pady=10)
+        # Create scroll area for reading passages
+        self.reading_passages_scroll_area = QScrollArea()
+        self.reading_passages_scroll_area.setWidgetResizable(True)
+        self.reading_passages_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         
-        # Create a canvas and scrollbar
-        canvas = tk.Canvas(container)
-        scrollbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
-        self.reading_passages_container = ttk.Frame(canvas)
+        # Create container widget for the scroll area
+        self.reading_passages_scroll_container = QWidget()
+        self.reading_passages_container_layout = QVBoxLayout(self.reading_passages_scroll_container)
+        self.reading_passages_container_layout.setSpacing(10)
+        self.reading_passages_container_layout.setContentsMargins(5, 5, 5, 5)
         
-        # Configure the canvas
-        self.reading_passages_container.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        # Add a stretch at the end to push frames to the top
+        self.reading_passages_container_layout.addStretch()
         
-        # Create a window in the canvas for the reading_passage container
-        canvas.create_window((0, 0), window=self.reading_passages_container, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        # Set the container as the scroll area's widget
+        self.reading_passages_scroll_area.setWidget(self.reading_passages_scroll_container)
         
-        # Pack the canvas and scrollbar
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
+        # Add scroll area to reading passages layout
+        self.reading_passages_layout.addWidget(self.reading_passages_scroll_area)
         
-        # Add initial reading_passage frame
+        # Add initial reading passage frame
         self.add_reading_passage_frame()
-
-    def add_reading_passage_frame(self):
+    
+    def add_reading_passage_frame(self, loaded_title="", loaded_text="", loaded_questions=None):
+        """Add a new reading passage frame (optionally with loaded data)"""
+        if loaded_questions is None:
+            loaded_questions = []
+        
+        # Create passage data structure
         passage_data = {
-            "title": "",
-            "text": "",
+            "title": loaded_title,
+            "text": loaded_text,
             "questions": []
         }
         self.reading_passages.append(passage_data)
-
-        # ================= Passage Frame =================
-        passage_frame = ttk.LabelFrame(
-            self.reading_passages_container,
-            text=f"Reading Passage {len(self.reading_passages)}",
-            padding=10
+        
+        # Create passage group box
+        passage_frame = QGroupBox(f"Reading Passage {len(self.reading_passages)}")
+        passage_frame.setStyleSheet("""
+            QGroupBox {
+                border: 2px solid #666;
+                border-radius: 5px;
+                margin-top: 10px;
+                padding-top: 15px;
+                font-weight: bold;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+        
+        # Create layout for passage frame
+        passage_layout = QVBoxLayout(passage_frame)
+        passage_layout.setSpacing(10)
+        passage_layout.setContentsMargins(10, 15, 10, 10)
+        
+        # Remove passage button (at top right)
+        remove_passage_widget = QWidget()
+        remove_passage_layout = QHBoxLayout(remove_passage_widget)
+        remove_passage_layout.setContentsMargins(0, 0, 0, 0)
+        
+        remove_passage_button = QPushButton("Delete Passage")
+        remove_passage_button.clicked.connect(
+            lambda: self.remove_reading_passage_frame(passage_frame, passage_data)
         )
-        passage_frame.pack(fill="x", pady=10, padx=5)
-
-        # ================= Remove Passage =================
-        def remove_passage():
+        
+        remove_passage_layout.addStretch()
+        remove_passage_layout.addWidget(remove_passage_button)
+        
+        passage_layout.addWidget(remove_passage_widget)
+        
+        # Passage Title
+        title_label = QLabel("Passage Title:")
+        title_label.setAlignment(Qt.AlignLeft)
+        title_entry = QLineEdit()
+        title_entry.setText(loaded_title)
+        title_entry.textChanged.connect(
+            lambda text: passage_data.update({"title": text})
+        )
+        
+        passage_layout.addWidget(title_label)
+        passage_layout.addWidget(title_entry)
+        
+        # Passage Text
+        text_label = QLabel("Passage Text:")
+        text_label.setAlignment(Qt.AlignLeft)
+        text_edit = QTextEdit()
+        text_edit.setMaximumHeight(200)
+        text_edit.setPlainText(loaded_text)
+        text_edit.textChanged.connect(
+            lambda: passage_data.update({"text": text_edit.toPlainText().strip()})
+        )
+        
+        passage_layout.addWidget(text_label)
+        passage_layout.addWidget(text_edit)
+        
+        # Create container for questions
+        questions_container = QWidget()
+        questions_container_layout = QVBoxLayout(questions_container)
+        questions_container_layout.setSpacing(5)
+        questions_container_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Store references
+        passage_frame.passage_data = passage_data
+        passage_frame.title_entry = title_entry
+        passage_frame.text_edit = text_edit
+        passage_frame.questions_container = questions_container
+        passage_frame.questions_container_layout = questions_container_layout
+        
+        # Function to add a question
+        def add_question(question_data=None):
+            if question_data is None:
+                question_data = {
+                    "sentence": "",
+                    "blank_after_word": 0,
+                    "choices": [],
+                    "correct_choice_index": None
+                }
+            
+            passage_data["questions"].append(question_data)
+            
+            # Create question frame
+            question_frame = QFrame()
+            question_frame.setStyleSheet("""
+                QFrame {
+                    border: 1px solid #ccc;
+                    border-radius: 4px;
+                    background-color: #f8f8f8;
+                }
+            """)
+            
+            question_layout = QGridLayout(question_frame)
+            question_layout.setSpacing(8)
+            question_layout.setContentsMargins(10, 10, 10, 10)
+            
+            # Sentence
+            sentence_label = QLabel("Sentence:")
+            sentence_label.setAlignment(Qt.AlignLeft)
+            sentence_entry = QLineEdit()
+            sentence_entry.setText(question_data.get("sentence", ""))
+            sentence_entry.textChanged.connect(
+                lambda text, qd=question_data: qd.update({"sentence": text})
+            )
+            
+            question_layout.addWidget(sentence_label, 0, 0)
+            question_layout.addWidget(sentence_entry, 0, 1, 1, 3)
+            
+            # Blank after word
+            blank_label = QLabel("Blank after word #:")
+            blank_label.setAlignment(Qt.AlignLeft)
+            blank_spinbox = QSpinBox()
+            blank_spinbox.setRange(0, 50)
+            blank_spinbox.setValue(question_data.get("blank_after_word", 0))
+            blank_spinbox.valueChanged.connect(
+                lambda value, qd=question_data: qd.update({"blank_after_word": value})
+            )
+            
+            question_layout.addWidget(blank_label, 1, 0)
+            question_layout.addWidget(blank_spinbox, 1, 1)
+            
+            # Choices container
+            choices_widget = QWidget()
+            choices_layout = QVBoxLayout(choices_widget)
+            choices_layout.setSpacing(5)
+            choices_layout.setContentsMargins(0, 0, 0, 0)
+            
+            # Create button group for correct choice
+            correct_choice_group = QButtonGroup(question_frame)
+            correct_choice_group.setExclusive(True)
+            
+            # Function to add a choice
+            def add_choice(choice_data=None, is_correct=False):
+                if choice_data is None:
+                    choice_data = {"value": ""}
+                
+                question_data["choices"].append(choice_data)
+                
+                choice_widget = QWidget()
+                choice_layout = QHBoxLayout(choice_widget)
+                choice_layout.setContentsMargins(0, 0, 0, 0)
+                
+                # Radio button for correct choice
+                choice_radio = QRadioButton()
+                choice_index = len(question_data["choices"]) - 1
+                correct_choice_group.addButton(choice_radio, choice_index)
+                
+                if is_correct:
+                    choice_radio.setChecked(True)
+                    question_data["correct_choice_index"] = choice_index
+                
+                # Connect radio button to update correct_choice_index
+                choice_radio.toggled.connect(
+                    lambda checked, idx=choice_index: (
+                        question_data.update({"correct_choice_index": idx}) 
+                        if checked else None
+                    )
+                )
+                
+                # Choice entry
+                choice_entry = QLineEdit()
+                choice_entry.setText(choice_data.get("value", ""))
+                choice_entry.textChanged.connect(
+                    lambda text, cd=choice_data: cd.update({"value": text})
+                )
+                
+                # Remove choice button
+                remove_choice_button = QPushButton("Delete")
+                remove_choice_button.clicked.connect(
+                    lambda: remove_choice(choice_widget, choice_data, choice_radio)
+                )
+                
+                choice_layout.addWidget(choice_radio)
+                choice_layout.addWidget(choice_entry)
+                choice_layout.addWidget(remove_choice_button)
+                choice_layout.setStretch(1, 1)
+                
+                # Add to choices layout
+                choices_layout.addWidget(choice_widget)
+                
+                # Store reference
+                choice_widget.choice_radio = choice_radio
+                choice_widget.choice_entry = choice_entry
+                
+                return choice_widget
+            
+            # Function to remove a choice
+            def remove_choice(choice_widget, choice_data, choice_radio):
+                # Remove from data
+                if choice_data in question_data["choices"]:
+                    idx = question_data["choices"].index(choice_data)
+                    question_data["choices"].remove(choice_data)
+                    
+                    # Update correct_choice_index if needed
+                    if question_data["correct_choice_index"] == idx:
+                        question_data["correct_choice_index"] = None
+                    
+                    # Remove from button group
+                    correct_choice_group.removeButton(choice_radio)
+                    
+                    # Remove from layout
+                    choices_layout.removeWidget(choice_widget)
+                    choice_widget.deleteLater()
+            
+            # Add choices if any
+            for i, choice in enumerate(question_data.get("choices", [])):
+                is_correct = (i == question_data.get("correct_choice_index"))
+                add_choice(choice, is_correct)
+            
+            # Add choice button
+            add_choice_button = QPushButton("Add Choice")
+            add_choice_button.clicked.connect(lambda: add_choice())
+            
+            choices_layout.addWidget(add_choice_button)
+            
+            # Add choices widget to question layout
+            question_layout.addWidget(choices_widget, 2, 0, 1, 4)
+            
+            # Button row
+            question_button_widget = QWidget()
+            question_button_layout = QHBoxLayout(question_button_widget)
+            question_button_layout.setContentsMargins(0, 0, 0, 0)
+            
+            # Remove question button
+            remove_question_button = QPushButton("Delete Question")
+            remove_question_button.clicked.connect(
+                lambda: remove_question(question_frame, question_data)
+            )
+            
+            question_button_layout.addStretch()
+            question_button_layout.addWidget(remove_question_button)
+            
+            question_layout.addWidget(question_button_widget, 3, 0, 1, 4)
+            
+            # Set column stretch
+            question_layout.setColumnStretch(1, 1)
+            question_layout.setColumnStretch(3, 1)
+            
+            # Store references
+            question_frame.question_data = question_data
+            question_frame.sentence_entry = sentence_entry
+            question_frame.blank_spinbox = blank_spinbox
+            question_frame.choices_layout = choices_layout
+            question_frame.correct_choice_group = correct_choice_group
+            question_frame.add_choice = lambda cd=None: add_choice(cd)
+            
+            # Add to questions container
+            questions_container_layout.addWidget(question_frame)
+            
+            return question_frame
+        
+        # Function to remove a question
+        def remove_question(question_frame, question_data):
+            if question_data in passage_data["questions"]:
+                passage_data["questions"].remove(question_data)
+                questions_container_layout.removeWidget(question_frame)
+                question_frame.deleteLater()
+        
+        # Add loaded questions
+        for loaded_question in loaded_questions:
+            add_question(loaded_question)
+        
+        # Add questions container to passage layout
+        passage_layout.addWidget(questions_container)
+        
+        # Add question button
+        add_question_button = QPushButton("Add Question")
+        add_question_button.clicked.connect(lambda: add_question())
+        passage_layout.addWidget(add_question_button)
+        
+        # Add passage frame to container
+        count = self.reading_passages_container_layout.count()
+        self.reading_passages_container_layout.insertWidget(count - 1, passage_frame)
+        
+        return passage_frame
+    
+    def remove_reading_passage_frame(self, passage_frame, passage_data):
+        """Remove a reading passage frame"""
+        if passage_data in self.reading_passages:
             self.reading_passages.remove(passage_data)
-            passage_frame.destroy()
-
-        ttk.Button(
-            passage_frame,
-            text="Delete Passage",
-            command=remove_passage
-        ).pack(anchor="e", pady=5)
-
-        # ================= Title =================
-        ttk.Label(passage_frame, text="Passage Title:").pack(anchor="w")
-        title_entry = ttk.Entry(passage_frame, width=60)
-        title_entry.pack(fill="x", pady=3)
-
-        title_entry.bind(
-            "<KeyRelease>",
-            lambda e: passage_data.update({"title": title_entry.get()})
-        )
-
-        # ================= Passage Text =================
-        ttk.Label(passage_frame, text="Passage Text:").pack(anchor="w")
-        text_box = tk.Text(passage_frame, height=6)
-        text_box.pack(fill="x", pady=5)
-
-        def update_passage_text(event):
-            passage_data["text"] = text_box.get("1.0", "end").strip()
-
-        text_box.bind("<KeyRelease>", update_passage_text)
-
-        # ================= Questions Container ================= 
-        questions_container = ttk.Frame(passage_frame)
-        questions_container.pack(fill="x", pady=10)
-
-        # ================= Add Question =================
-        def add_question():
-            question_data = {
-                "sentence": "",
-                "blank_after_word": 0,
-                "choices": [],
-                "correct_choice_index": None
-            }
-            passage_data["questions"].append(question_data)
-
-            question_frame = ttk.Frame(questions_container, padding=5, relief="solid")
-            question_frame.pack(fill="x", pady=5)
-
-            # ---- Sentence ----
-            ttk.Label(question_frame, text="Sentence:").grid(row=0, column=0, sticky="w")
-            sentence_entry = ttk.Entry(question_frame, width=60)
-            sentence_entry.grid(row=0, column=1, columnspan=3, pady=3)
-
-            sentence_entry.bind(
-                "<KeyRelease>",
-                lambda e: question_data.update({"sentence": sentence_entry.get()})
-            )
-
-            # ---- Blank position ----
-            ttk.Label(question_frame, text="Blank after word #:").grid(row=1, column=0, sticky="w")
-            blank_spin = ttk.Spinbox(question_frame, from_=0, to=50, width=5)
-            blank_spin.grid(row=1, column=1, sticky="w")
-
-            blank_spin.bind(
-                "<KeyRelease>",
-                lambda e: question_data.update(
-                    {"blank_after_word": int(blank_spin.get() or 0)}
-                )
-            )
-
-            # ================= Choices Container =================
-            choices_container = ttk.Frame(question_frame)
-            choices_container.grid(row=2, column=0, columnspan=4, pady=5, sticky="w")
-
-            correct_choice_var = tk.IntVar(value=-1)
-            # ---- Add Choice ----
-            def add_choice():
-                choice_data = {"value": ""}
-                question_data["choices"].append(choice_data)
-
-                choice_frame = ttk.Frame(choices_container)
-                choice_frame.pack(fill="x", pady=2)
-
-                choice_index = len(question_data["choices"])
-
-                radio = ttk.Radiobutton(
-                    choice_frame,
-                    variable=correct_choice_var,
-                    value=choice_index,
-                    command=lambda: question_data.update({
-                        "correct_choice_index": correct_choice_var.get()-1
-                    })
-                )
-                radio.pack(side="left")
-
-                choice_entry = ttk.Entry(choice_frame, width=40)
-                choice_entry.pack(side="left", padx=3)
-
-                choice_entry.bind(
-                    "<KeyRelease>",
-                    lambda e: choice_data.update({"value": choice_entry.get()})
-                )
-
-                def remove_choice():
-                    question_data["choices"].remove(choice_data)
-                    choice_frame.destroy()
-                    if question_data["correct_choice_index"] == choice_index:
-                        question_data["correct_choice_index"] = None
-                        correct_choice_var.set(-1)
-
-                ttk.Button(
-                    choice_frame,
-                    text="Delete",
-                    command=remove_choice
-                ).pack(side="left")
-
-            ttk.Button(
-                question_frame,
-                text="Add Choice",
-                command=add_choice
-            ).grid(row=3, column=0, pady=5, sticky="w")
-
-            # ---- Remove Question ----
-            def remove_question():
-                passage_data["questions"].remove(question_data)
-                question_frame.destroy()
-
-            ttk.Button(
-                question_frame,
-                text="Delete Question",
-                command=remove_question
-            ).grid(row=3, column=3, pady=5, sticky="e")
-
-        # ================= Add Question Button =================
-        ttk.Button(
-            passage_frame,
-            text="Add Question",
-            command=add_question
-        ).pack(pady=5)
-
-        # Add first question by default
-        add_question()
-
-    def add_reading_passage_frame_loaded_config(self,title,text,questions):
-        passage_data = {
-            "title": title,
-            "text": text,
-            "questions": []
-        }
-        self.reading_passages.append(passage_data)
-
-        # ================= Passage Frame =================
-        passage_frame = ttk.LabelFrame(
-            self.reading_passages_container,
-            text=f"Reading Passage {len(self.reading_passages)}",
-            padding=10
-        )
-        passage_frame.pack(fill="x", pady=10, padx=5)
-
-        # ================= Remove Passage =================
-        def remove_passage():
-            self.reading_passages.remove(passage_data)
-            passage_frame.destroy()
-
-        ttk.Button(
-            passage_frame,
-            text="Delete Passage",
-            command=remove_passage
-        ).pack(anchor="e", pady=5)
-
-        # ================= Title =================
-        ttk.Label(passage_frame, text="Passage Title:").pack(anchor="w")
-        title_entry = ttk.Entry(passage_frame, width=60)
-        title_entry.pack(fill="x", pady=3)
-
-        title_entry.bind(
-            "<KeyRelease>",
-            lambda e: passage_data.update({"title": title_entry.get()})
-        )
-        title_entry.insert(0, title)
-
-        # ================= Passage Text =================
-        ttk.Label(passage_frame, text="Passage Text:").pack(anchor="w")
-        text_box = tk.Text(passage_frame, height=6)
-        text_box.pack(fill="x", pady=5)
-
-        def update_passage_text(event):
-            passage_data["text"] = text_box.get("1.0", "end").strip()
-
-        text_box.bind("<KeyRelease>", update_passage_text)
-        text_box.insert("1.0", text)
-
-        # ================= Questions Container ================= 
-        questions_container = ttk.Frame(passage_frame)
-        questions_container.pack(fill="x", pady=10)
-
-        # ================= Add Question =================
-        def add_question():
-            question_data = {
-                "sentence": "",
-                "blank_after_word": 0,
-                "choices": [],
-                "correct_choice_index": None
-            }
-            passage_data["questions"].append(question_data)
-
-            question_frame = ttk.Frame(questions_container, padding=5, relief="solid")
-            question_frame.pack(fill="x", pady=5)
-
-            # ---- Sentence ----
-            ttk.Label(question_frame, text="Sentence:").grid(row=0, column=0, sticky="w")
-            sentence_entry = ttk.Entry(question_frame, width=60)
-            sentence_entry.grid(row=0, column=1, columnspan=3, pady=3)
-
-            sentence_entry.bind(
-                "<KeyRelease>",
-                lambda e: question_data.update({"sentence": sentence_entry.get()})
-            )
-
-            # ---- Blank position ----
-            ttk.Label(question_frame, text="Blank after word #:").grid(row=1, column=0, sticky="w")
-            blank_spin = ttk.Spinbox(question_frame, from_=0, to=50, width=5)
-            blank_spin.grid(row=1, column=1, sticky="w")
-
-            blank_spin.bind(
-                "<KeyRelease>",
-                lambda e: question_data.update(
-                    {"blank_after_word": int(blank_spin.get() or 0)}
-                )
-            )
-
-            # ================= Choices Container =================
-            choices_container = ttk.Frame(question_frame)
-            choices_container.grid(row=2, column=0, columnspan=4, pady=5, sticky="w")
-
-            correct_choice_var = tk.IntVar(value=-1)
-            # ---- Add Choice ----
-            def add_choice():
-                choice_data = {"value": ""}
-                question_data["choices"].append(choice_data)
-
-                choice_frame = ttk.Frame(choices_container)
-                choice_frame.pack(fill="x", pady=2)
-
-                choice_index = len(question_data["choices"])
-
-                radio = ttk.Radiobutton(
-                    choice_frame,
-                    variable=correct_choice_var,
-                    value=choice_index,
-                    command=lambda: question_data.update({
-                        "correct_choice_index": correct_choice_var.get()-1
-                    })
-                )
-                radio.pack(side="left")
-
-                choice_entry = ttk.Entry(choice_frame, width=40)
-                choice_entry.pack(side="left", padx=3)
-
-                choice_entry.bind(
-                    "<KeyRelease>",
-                    lambda e: choice_data.update({"value": choice_entry.get()})
-                )
-
-                def remove_choice():
-                    question_data["choices"].remove(choice_data)
-                    choice_frame.destroy()
-                    if question_data["correct_choice_index"] == choice_index:
-                        question_data["correct_choice_index"] = None
-                        correct_choice_var.set(-1)
-
-                ttk.Button(
-                    choice_frame,
-                    text="Delete",
-                    command=remove_choice
-                ).pack(side="left")
-
-            ttk.Button(
-                question_frame,
-                text="Add Choice",
-                command=add_choice
-            ).grid(row=3, column=0, pady=5, sticky="w")
-
-            # ---- Remove Question ----
-            def remove_question():
-                passage_data["questions"].remove(question_data)
-                question_frame.destroy()
-
-            ttk.Button(
-                question_frame,
-                text="Delete Question",
-                command=remove_question
-            ).grid(row=3, column=3, pady=5, sticky="e")
-
-        def add_loaded_question_answers(question):
-            question_data = {
-                "sentence": question['sentence'],
-                "blank_after_word": question['blank_after_word'],
-                "choices": [],
-                "correct_choice_index": question['correct_choice_index']
-            }
-            passage_data["questions"].append(question_data)
-
-            question_frame = ttk.Frame(questions_container, padding=5, relief="solid")
-            question_frame.pack(fill="x", pady=5)
-
-            # ---- Sentence ----
-            ttk.Label(question_frame, text="Sentence:").grid(row=0, column=0, sticky="w")
-            sentence_entry = ttk.Entry(question_frame, width=60)
-            sentence_entry.grid(row=0, column=1, columnspan=3, pady=3)
-
-            sentence_entry.bind(
-                "<KeyRelease>",
-                lambda e: question_data.update({"sentence": sentence_entry.get()})
-            )
-            sentence_entry.insert(0, question['sentence'])
-            # ---- Blank position ----
-            ttk.Label(question_frame, text="Blank after word #:").grid(row=1, column=0, sticky="w")
-            blank_spin = ttk.Spinbox(question_frame, from_=0, to=50, width=5)
-            blank_spin.grid(row=1, column=1, sticky="w")
-
-            blank_spin.bind(
-                "<KeyRelease>",
-                lambda e: question_data.update(
-                    {"blank_after_word": int(blank_spin.get() or 0)}
-                )
-            )
-            blank_spin.set(question['blank_after_word']) 
-            # ================= Choices Container =================
-            choices_container = ttk.Frame(question_frame)
-            choices_container.grid(row=2, column=0, columnspan=4, pady=5, sticky="w")
-
-            correct_choice_var = tk.IntVar(value=-1)
-            # ---- Add Choice ----
-            def add_loaded_choices(choice,choice_order):
-                choice_data = choice # comes in the shape of {"value":"<choice data>"}
-                question_data["choices"].append(choice_data)
-
-                choice_frame = ttk.Frame(choices_container)
-                choice_frame.pack(fill="x", pady=2)
-
-                choice_index = len(question_data["choices"])
-
-                radio = ttk.Radiobutton(
-                    choice_frame,
-                    variable=correct_choice_var,
-                    value=choice_index,
-                    command=lambda: question_data.update({
-                        "correct_choice_index": correct_choice_var.get()-1
-                    })
-                )
-                radio.pack(side="left")
-                # Check if this choice is the correct one
-                if choice_order == question_data["correct_choice_index"]:
-                    radio.invoke()  # This checks the radio button
-
-                choice_entry = ttk.Entry(choice_frame, width=40)
-                choice_entry.pack(side="left", padx=3)
-
-                choice_entry.bind(
-                    "<KeyRelease>",
-                    lambda e: choice_data.update({"value": choice_entry.get()})
-                )
-                choice_entry.insert(0,choice['value'])
-
-                def remove_choice():
-                    question_data["choices"].remove(choice_data)
-                    choice_frame.destroy()
-                    if question_data["correct_choice_index"] == choice_index:
-                        question_data["correct_choice_index"] = None
-                        correct_choice_var.set(-1)
-
-                ttk.Button(
-                    choice_frame,
-                    text="Delete",
-                    command=remove_choice
-                ).pack(side="left")
-            for i,choice in enumerate(question['choices']):
-                add_loaded_choices(choice,i)
-                        # ---- Add Choice ----
-            def add_choice():
-                choice_data = {"value": ""}
-                question_data["choices"].append(choice_data)
-
-                choice_frame = ttk.Frame(choices_container)
-                choice_frame.pack(fill="x", pady=2)
-
-                choice_index = len(question_data["choices"])
-
-                radio = ttk.Radiobutton(
-                    choice_frame,
-                    variable=correct_choice_var,
-                    value=choice_index,
-                    command=lambda: question_data.update({
-                        "correct_choice_index": correct_choice_var.get()-1
-                    })
-                )
-                radio.pack(side="left")
-
-                choice_entry = ttk.Entry(choice_frame, width=40)
-                choice_entry.pack(side="left", padx=3)
-
-                choice_entry.bind(
-                    "<KeyRelease>",
-                    lambda e: choice_data.update({"value": choice_entry.get()})
-                )
-
-                def remove_choice():
-                    question_data["choices"].remove(choice_data)
-                    choice_frame.destroy()
-                    if question_data["correct_choice_index"] == choice_index:
-                        question_data["correct_choice_index"] = None
-                        correct_choice_var.set(-1)
-
-                ttk.Button(
-                    choice_frame,
-                    text="Delete",
-                    command=remove_choice
-                ).pack(side="left")
-
-            ttk.Button(
-                question_frame,
-                text="Add Choice",
-                command=add_choice
-            ).grid(row=3, column=0, pady=5, sticky="w")
-
-            # ---- Remove Question ----
-            def remove_question():
-                passage_data["questions"].remove(question_data)
-                question_frame.destroy()
-
-            ttk.Button(
-                question_frame,
-                text="Delete Question",
-                command=remove_question
-            ).grid(row=3, column=3, pady=5, sticky="e")
-
-        # ================= Add Question Button =================
-        ttk.Button(
-            passage_frame,
-            text="Add Question",
-            command=add_question
-        ).pack(pady=5)
-
-        # fill entries and self.reading_passages with loaded question and answers
-        for question in questions:
-            add_loaded_question_answers(question)
-
-
+            passage_frame.setParent(None)
+            passage_frame.deleteLater()
+    
+    def add_reading_passage_frame_loaded_config(self, title, text, questions):
+        """Add reading passage frame with loaded configuration"""
+        return self.add_reading_passage_frame(title, text, questions)
         
     def setup_settings_section(self):
-        # Output file settings
-        ttk.Label(self.settings_frame, text="Output File:").grid(row=0, column=0, sticky='w', pady=5)
-        self.output_file_var = tk.StringVar(value="animal_game.html")
-        output_entry = ttk.Entry(self.settings_frame, textvariable=self.output_file_var, width=40)
-        output_entry.grid(row=0, column=1, pady=5, padx=5, sticky='we')
-        ttk.Button(self.settings_frame, text="Browse", command=self.browse_output).grid(row=0, column=2, pady=5, padx=5)
-
-        # test title
-        ttk.Label(self.settings_frame, text="Test Title:").grid(row=1, column=0, sticky='w', pady=5)
-        self.test_title_var=tk.StringVar(value="Lesson Practice")
-        test_title_entry = ttk.Entry(self.settings_frame, textvariable=self.test_title_var, width=20)
-        test_title_entry.grid(row=1, column=1, pady=5, padx=5, sticky='we')
-
-        # Configure grid weights
-        self.settings_frame.columnconfigure(1, weight=1)
-
-    def setup_readings_section(self):
-        return
+        """Setup the settings section"""
+        # Create a grid layout for settings
+        settings_layout = QGridLayout(self.settings_frame)
+        settings_layout.setSpacing(10)
+        settings_layout.setContentsMargins(10, 10, 10, 10)
         
+        # Output file settings
+        output_label = QLabel("Output File:")
+        output_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        
+        self.output_file_edit = QLineEdit()
+        self.output_file_edit.setText("animal_game.html")
+        self.output_file_edit.setPlaceholderText("Enter output file name...")
+        
+        browse_button = QPushButton("Browse")
+        browse_button.clicked.connect(self.browse_output)
+        
+        settings_layout.addWidget(output_label, 0, 0)
+        settings_layout.addWidget(self.output_file_edit, 0, 1)
+        settings_layout.addWidget(browse_button, 0, 2)
+        
+        # Test title
+        test_title_label = QLabel("Test Title:")
+        test_title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        
+        self.test_title_edit = QLineEdit()
+        self.test_title_edit.setText("Lesson Practice")
+        self.test_title_edit.setPlaceholderText("Enter test title...")
+        
+        settings_layout.addWidget(test_title_label, 1, 0)
+        settings_layout.addWidget(self.test_title_edit, 1, 1)
+        
+        # Set column stretch for responsive resizing
+        settings_layout.setColumnStretch(1, 1)
+        
+        # You can add more settings here as needed
+        # For example, add a stretch to push everything to the top
+        settings_layout.setRowStretch(2, 1)
+    
     def browse_output(self):
-        filename = filedialog.asksaveasfilename(
-            title="Save HTML File",
-            defaultextension=".html",
-            filetypes=[("HTML files", "*.html"), ("All files", "*.*")]
+        """Browse for output file location"""
+        file_name, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save HTML File",
+            "",
+            "HTML Files (*.html *.htm);;All Files (*.*)"
         )
-        if filename:
-            self.output_file_var.set(filename)
+        if file_name:
+            # Ensure .html extension if not provided
+            if not file_name.lower().endswith(('.html', '.htm')):
+                file_name += '.html'
+            self.output_file_edit.setText(file_name)
             
     def new_config(self):
-        # Clear all data
-        for animal in self.animals:
-            animal.destroy()
-        self.animals = []
-        
-        for question in self.questions:
-            question.destroy()
-        self.questions = []
-        #clear dialogues data and ui widgets
-        self.dialouges = []
-        # Destroy all widgets inside the dialouges_container frame
-        for widget in self.dialouges_container.winfo_children():
-            widget.destroy()
-        # Optional: Update the scroll region
-        canvas = self.dialouges_container.master  # Get the parent canvas
-        if canvas:
-            canvas.configure(scrollregion=canvas.bbox("all"))
-
-        # clear reading passages data and ui widgets
-        self.reading_passages = []
-        # Destroy all widgets inside the reading_passages_container frame
-        for widget in self.reading_passages_container.winfo_children():
-            widget.destroy()
-        # Optional: Update the scroll region
-        canvas = self.reading_passages_container.master  # Get the parent canvas
-        if canvas:
-            canvas.configure(scrollregion=canvas.bbox("all"))
-
-        # Reset settings
-        self.animals_per_row_var.set("3")
-        self.output_file_var.set("animal_game.html")
-        self.test_title_var.set("Lesson Practice")
-        
-    def load_config(self):
-        filename = filedialog.askopenfilename(
-            title="Load Configuration",
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
-        )
-        if not filename:
-            return
-            
+        """Clear all data and reset to default"""
         try:
-            with open(filename, 'r', encoding='utf-8') as f:
+            # Clear animals
+            for animal in self.animals[:]:  # Copy list to avoid modification during iteration
+                self.remove_animal_frame(animal)
+            self.animals = []
+            
+            # Clear questions
+            for question in self.questions[:]:
+                self.remove_question_frame(question)
+            self.questions = []
+            
+            # Clear dialogues data and UI widgets
+            for dialogue in self.dialogues[:]:
+                self.remove_dialogue_frame(dialogue, dialogue.dialogue_data)
+            self.dialogues = []
+            
+            # Clear reading passages data and UI widgets
+            for passage in self.reading_passages[:]:
+                self.remove_reading_passage_frame(passage, passage.passage_data)
+            self.reading_passages = []
+            
+            # Reset settings
+            if hasattr(self, 'animals_per_row_spinbox'):
+                self.animals_per_row_spinbox.setValue(3)
+            
+            if hasattr(self, 'output_file_edit'):
+                self.output_file_edit.setText("animal_game.html")
+            
+            if hasattr(self, 'test_title_edit'):
+                self.test_title_edit.setText("Lesson Practice")
+            
+            # Add one empty frame to each section for user convenience
+            self.add_animal_frame()
+            self.add_question_frame()
+            self.add_dialogue_frame()
+            self.add_reading_passage_frame()
+            
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to create new configuration: {str(e)}")
+    
+    def load_config(self):
+        """Load configuration from JSON file"""
+        try:
+            file_name, _ = QFileDialog.getOpenFileName(
+                self,
+                "Load Configuration",
+                "",
+                "JSON Files (*.json);;All Files (*.*)"
+            )
+            
+            if not file_name:
+                return
+            
+            with open(file_name, 'r', encoding='utf-8') as f:
                 config = json.load(f)
-                
+            
             # Clear current data
             self.new_config()
             
+            # Remove the default empty frames added by new_config()
+            # (We'll replace them with loaded data)
+            for animal in self.animals[:]:
+                self.remove_animal_frame(animal)
+            
+            for question in self.questions[:]:
+                self.remove_question_frame(question)
+            
+            for dialogue in self.dialogues[:]:
+                self.remove_dialogue_frame(dialogue, dialogue.dialogue_data)
+            
+            for passage in self.reading_passages[:]:
+                self.remove_reading_passage_frame(passage, passage.passage_data)
+            
             # Load animals
             for animal_data in config.get('animals', []):
-                self.add_animal_frame()
-                animal_frame = self.animals[-1]
-                animal_frame.image_url.insert(0, animal_data.get('image_url', ''))
-                animal_frame.title.insert(0, animal_data.get('title', ''))
-                animal_frame.word.insert(0, animal_data.get('word', ''))
-                animal_frame.audio.insert(0, animal_data.get('audio', ''))
-                
+                frame = self.add_animal_frame()
+                if frame and hasattr(frame, 'image_url'):
+                    frame.image_url.setText(animal_data.get('image_url', ''))
+                    frame.title.setText(animal_data.get('title', ''))
+                    frame.word.setText(animal_data.get('word', ''))
+                    frame.audio.setText(animal_data.get('audio', ''))
+            
             # Load questions
             for question_data in config.get('questions', []):
-                self.add_question_frame()
-                question_frame = self.questions[-1]
-                question_frame.image_url.insert(0, question_data.get('image_url', '')) 
-                question_frame.question_text.insert(0, question_data.get('text', ''))
-                
-                # # Clear default answers - this part gives error 
-                # for entry in question_frame.answer_entries[:]:
-                #     question_frame.remove_answer_row(
-                #         question_frame.radio_buttons[question_frame.answer_entries.index(entry)],
-                #         entry,
-                #         None  # Button reference not stored, but it's OK for initial load
-                #     )
-                
-                # Add answers from config
-                answers = question_data.get('answers', [])
-                correct_index = question_data.get('correct_index', 0)
-                
-                for i, answer in enumerate(answers):
-                    question_frame.add_answer_row()
-                    question_frame.answer_entries[-1].insert(0, answer)
+                frame = self.add_question_frame()
+                if frame and hasattr(frame, 'image_url'):
+                    frame.image_url.setText(question_data.get('image_url', ''))
+                    frame.question_text.setText(question_data.get('text', ''))
                     
-                # Set correct answer
-                if answers and 0 <= correct_index < len(answers):
-                    question_frame.correct_answer_var.set(str(correct_index))
-
-            # load dialouges
-            for dialouge in config.get('dialogues',[]):
-                self.add_dialogue_frame_loaded_config(dialouge['title'],dialouge['lines'])
-
-            # load reading_passages
-            for reading_passage in config.get('reading_passages',[]):
-                self.add_reading_passage_frame_loaded_config(reading_passage['title'],reading_passage['text'],reading_passage['questions'])
+                    # Clear default answers
+                    while frame.answer_entries:
+                        # We need to simulate removing the first answer
+                        # Since we don't have direct access to the row widgets,
+                        # we'll need to remove them from the layout
+                        if hasattr(frame, 'answers_layout'):
+                            item = frame.answers_layout.takeAt(0)
+                            if item and item.widget():
+                                widget = item.widget()
+                                if widget != frame.add_answer_button:  # Don't remove the add button
+                                    frame.answers_layout.removeWidget(widget)
+                                    widget.deleteLater()
+                    
+                    # Add answers from config
+                    answers = question_data.get('answers', [])
+                    correct_index = question_data.get('correct_index', 0)
+                    
+                    for i, answer in enumerate(answers):
+                        if hasattr(frame, 'add_answer_row'):
+                            frame.add_answer_row()
+                            if frame.answer_entries and i < len(frame.answer_entries):
+                                frame.answer_entries[i].setText(answer)
+                    
+                    # Set correct answer
+                    if answers and 0 <= correct_index < len(frame.radio_buttons):
+                        frame.radio_buttons[correct_index].setChecked(True)
+            
+            # Load dialogues
+            for dialogue_data in config.get('dialogues', []):
+                self.add_dialogue_frame_loaded_config(
+                    dialogue_data.get('title', ''),
+                    dialogue_data.get('lines', [])
+                )
+            
+            # Load reading passages
+            for passage_data in config.get('reading_passages', []):
+                self.add_reading_passage_frame_loaded_config(
+                    passage_data.get('title', ''),
+                    passage_data.get('text', ''),
+                    passage_data.get('questions', [])
+                )
+            
             # Load settings
-            self.animals_per_row_var.set(str(config.get('animals_per_row', 3)))
-            self.output_file_var.set(config.get('output_file', 'animal_game.html'))
-            self.test_title_var.set(config.get('test_title', 'Lesson Practice'))
+            if 'animals_per_row' in config and hasattr(self, 'animals_per_row_spinbox'):
+                self.animals_per_row_spinbox.setValue(config['animals_per_row'])
+            
+            if 'output_file' in config and hasattr(self, 'output_file_edit'):
+                self.output_file_edit.setText(config.get('output_file', 'animal_game.html'))
+            
+            if 'test_title' in config and hasattr(self, 'test_title_edit'):
+                self.test_title_edit.setText(config.get('test_title', 'Lesson Practice'))
+            
+            QMessageBox.information(self, "Success", "Configuration loaded successfully!")
             
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load configuration: {str(e)}")
-            
+            QMessageBox.critical(self, "Error", f"Failed to load configuration: {str(e)}")
+    
     def save_config(self):
-        filename = filedialog.asksaveasfilename(
-            title="Save Configuration",
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
-        )
-        if not filename:
-            return
-            
+        """Save configuration to JSON file"""
         try:
+            file_name, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save Configuration",
+                "",
+                "JSON Files (*.json);;All Files (*.*)"
+            )
+            
+            if not file_name:
+                return
+            
+            # Ensure .json extension
+            if not file_name.lower().endswith('.json'):
+                file_name += '.json'
+            
             # Prepare animals data
             animals_data = []
             for animal in self.animals:
-                animals_data.append({
-                    'image_url': animal.image_url.get(),
-                    'title': animal.title.get(),
-                    'word': animal.word.get(),
-                    'audio': animal.audio.get()
-                })
-                
+                if hasattr(animal, 'image_url') and hasattr(animal, 'title'):
+                    animals_data.append({
+                        'image_url': animal.image_url.text(),
+                        'title': animal.title.text(),
+                        'word': animal.word.text() if hasattr(animal, 'word') else '',
+                        'audio': animal.audio.text() if hasattr(animal, 'audio') else ''
+                    })
+            
             # Prepare questions data
             questions_data = []
             for question in self.questions:
-                answers = [entry.get() for entry in question.answer_entries]
-                correct_index = int(question.correct_answer_var.get()) if question.correct_answer_var.get() else 0
-                
-                questions_data.append({
-                    'image_url': question.image_url.get(),
-                    'text': question.question_text.get(),
-                    'answers': answers,
-                    'correct_index': correct_index
-                })
-                
+                if hasattr(question, 'image_url') and hasattr(question, 'question_text'):
+                    # Get answers from entries
+                    answers = []
+                    for entry in question.answer_entries:
+                        if hasattr(entry, 'text'):
+                            answers.append(entry.text())
+                    
+                    # Find correct answer index
+                    correct_index = -1
+                    for i, radio in enumerate(question.radio_buttons):
+                        if radio.isChecked():
+                            correct_index = i
+                            break
+                    
+                    questions_data.append({
+                        'image_url': question.image_url.text(),
+                        'text': question.question_text.text(),
+                        'answers': answers,
+                        'correct_index': correct_index
+                    })
+            
+            # Prepare dialogues data
+            dialogues_data = []
+            for dialogue_frame in self.dialogues:
+                if hasattr(dialogue_frame, 'dialogue_data'):
+                    dialogues_data.append(dialogue_frame.dialogue_data)
+            
+            # Prepare reading passages data
+            reading_passages_data = []
+            for passage_frame in self.reading_passages:
+                if hasattr(passage_frame, 'passage_data'):
+                    reading_passages_data.append(passage_frame.passage_data)
+            
             # Prepare config
             config = {
                 'animals': animals_data,
                 'questions': questions_data,
-                'dialogues':self.dialouges,
-                'reading_passages':self.reading_passages,
-                'animals_per_row': int(self.animals_per_row_var.get()),
-                'output_file': self.output_file_var.get(),
-                'test_title': self.test_title_var.get()
+                'dialogues': dialogues_data,
+                'reading_passages': reading_passages_data,
+                'animals_per_row': self.animals_per_row_spinbox.value() if hasattr(self, 'animals_per_row_spinbox') else 3,
+                'output_file': self.output_file_edit.text() if hasattr(self, 'output_file_edit') else 'animal_game.html',
+                'test_title': self.test_title_edit.text() if hasattr(self, 'test_title_edit') else 'Lesson Practice'
             }
             
             # Save to file
-            with open(filename, 'w', encoding='utf-8') as f:
+            with open(file_name, 'w', encoding='utf-8') as f:
                 json.dump(config, f, ensure_ascii=False, indent=2)
-                
-            messagebox.showinfo("Success", "Configuration saved successfully!")
+            
+            QMessageBox.information(self, "Success", "Configuration saved successfully!")
             
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save configuration: {str(e)}")
+            QMessageBox.critical(self, "Error", f"Failed to save configuration: {str(e)}")
+    
+    def remove_animal_frame(self, frame):
+        """Remove an animal frame (helper method)"""
+        if frame in self.animals:
+            # Remove from layout
+            self.animals_container_layout.removeWidget(frame)
+            # Remove from list
+            self.animals.remove(frame)
+            # Delete the widget
+            frame.deleteLater()
 
     def generate_reading_passage_html(self, passage, passage_index):
         """Generate HTML for a reading passage with questions."""
@@ -2954,6 +2931,7 @@ All rights reserved © 2026 – Educational Design and Development
             messagebox.showerror("Error", f"Failed to generate HTML: {str(e)}")
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = AnimalLearningGameGenerator(root)
-    root.mainloop()
+    app = QApplication(sys.argv)
+    window = AnimalLearningGameGenerator()
+    window.show()
+    sys.exit(app.exec())
