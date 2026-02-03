@@ -79,7 +79,7 @@ class AnimalLearningGameGenerator(QMainWindow):
         self.questions_layout = QVBoxLayout(self.questions_frame)
         self.dialogues_layout = QVBoxLayout(self.dialogues_frame)
         self.reading_passages_layout = QVBoxLayout(self.reading_passages_frame)
-        self.settings_layout = QVBoxLayout(self.settings_frame)
+        # self.settings_layout = QVBoxLayout(self.settings_frame)
         
         # Set margins for each frame's layout (padding)
         padding = 10
@@ -87,7 +87,7 @@ class AnimalLearningGameGenerator(QMainWindow):
         self.questions_layout.setContentsMargins(padding, padding, padding, padding)
         self.dialogues_layout.setContentsMargins(padding, padding, padding, padding)
         self.reading_passages_layout.setContentsMargins(padding, padding, padding, padding)
-        self.settings_layout.setContentsMargins(padding, padding, padding, padding)
+        # self.settings_layout.setContentsMargins(padding, padding, padding, padding)
         
         # successAudio
         self.successAudioEncodedString=""
