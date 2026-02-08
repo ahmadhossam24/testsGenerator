@@ -158,7 +158,7 @@ class AnimalLearningGameGenerator(QMainWindow):
             self.animals_per_row_spinbox = QSpinBox()
             self.animals_per_row_spinbox.setRange(1, 6)
             self.animals_per_row_spinbox.setValue(3)
-            self.animals_per_row_spinbox.setFixedWidth(60)
+            self.animals_per_row_spinbox.setFixedWidth(75)
             
             # Add animal button
             add_animal_button = QPushButton("Add Card")
@@ -683,7 +683,7 @@ class AnimalLearningGameGenerator(QMainWindow):
         # Add initial dialogue frame
         self.add_dialogue_frame()
     
-    def add_dialogue_frame(self, loaded_title="", loaded_lines=None):
+    def add_dialogue_frame(self, loaded_title=" ", loaded_lines=None):
         """Add a new dialogue frame (optionally with loaded data)"""
         if loaded_lines is None:
             loaded_lines = []
@@ -721,7 +721,7 @@ class AnimalLearningGameGenerator(QMainWindow):
         title_label = QLabel("Dialogue Title:")
         title_label.setAlignment(Qt.AlignLeft)
         title_entry = QLineEdit()
-        title_entry.setText(loaded_title)
+        title_entry.setText(loaded_title or "")
         
         # Connect title changes to data
         title_entry.textChanged.connect(
@@ -955,9 +955,11 @@ class AnimalLearningGameGenerator(QMainWindow):
     def duplicate_dialogue_line(self, source_frame, char_name, image_url, position, text, translation, audio):
         """Duplicate a dialogue line (called from within a line frame)"""
         # Find the parent dialogue frame
-        parent_widget = source_frame.parent().parent().parent()
-        if hasattr(parent_widget, 'duplicate_line'):
-            parent_widget.duplicate_line(char_name, image_url, position, text, translation, audio)
+        parent_widget = source_frame 
+        while parent_widget is not None and not hasattr(parent_widget, "duplicate_line"): 
+            parent_widget = parent_widget.parent() 
+        if parent_widget is not None: parent_widget.duplicate_line(char_name, image_url, position, text, translation, audio) 
+        else: print("No parent with duplicate_line found")
     
     def remove_dialogue_line(self, line_frame, dialogue_data, line_data):
         """Remove a dialogue line"""
@@ -968,8 +970,8 @@ class AnimalLearningGameGenerator(QMainWindow):
     
     def remove_dialogue_frame(self, dialogue_frame, dialogue_data):
         """Remove a dialogue frame"""
-        if dialogue_data in self.dialogues:
-            self.dialogues.remove(dialogue_data)
+        if dialogue_data in self.dialouges:
+            self.dialouges.remove(dialogue_data)
             dialogue_frame.setParent(None)
             dialogue_frame.deleteLater()
     
@@ -1007,7 +1009,7 @@ class AnimalLearningGameGenerator(QMainWindow):
         # Add initial reading passage frame
         self.add_reading_passage_frame()
     
-    def add_reading_passage_frame(self, loaded_title="", loaded_text="", loaded_questions=None):
+    def add_reading_passage_frame(self, loaded_title=" ", loaded_text="", loaded_questions=None):
         """Add a new reading passage frame (optionally with loaded data)"""
         if loaded_questions is None:
             loaded_questions = []
@@ -1061,7 +1063,7 @@ class AnimalLearningGameGenerator(QMainWindow):
         title_label = QLabel("Passage Title:")
         title_label.setAlignment(Qt.AlignLeft)
         title_entry = QLineEdit()
-        title_entry.setText(loaded_title)
+        title_entry.setText(loaded_title or "")
         title_entry.textChanged.connect(
             lambda text: passage_data.update({"title": text})
         )
@@ -1684,6 +1686,15 @@ class AnimalLearningGameGenerator(QMainWindow):
             return ""
             
     def generate_html(self):
+        print("1")
+        print(self.animals)
+        print("2")
+        print(self.questions)
+        print("3")
+        print(self.dialouges)
+        print("4")
+        print(self.reading_passages)
+        return
         try:
             # Prepare animals HTML
             animals_html = ""
