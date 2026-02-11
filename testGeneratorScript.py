@@ -44,7 +44,6 @@ class AnimalLearningGameGenerator(QMainWindow):
         self.questions = []
         self.dialouges = []
         self.reading_passages = []
-        self.animals_per_row = 3
         
         # Create notebook/tab widget for sections
         self.notebook = QTabWidget()
@@ -435,15 +434,6 @@ class AnimalLearningGameGenerator(QMainWindow):
             self.animals.remove(frame)
             # Delete the widget
             frame.deleteLater()
-        
-    def browse_audio(self, audio_entry):
-        filename = filedialog.askopenfilename(
-            title="Select Audio File",
-            filetypes=[("Audio files", "*.mp3 *.wav *.ogg *.OPUS"), ("All files", "*.*")]
-        )
-        if filename:
-            audio_entry.delete(0, tk.END)
-            audio_entry.insert(0, filename)
 
     def setup_questions_section(self):
         # Add question button
@@ -1367,6 +1357,64 @@ class AnimalLearningGameGenerator(QMainWindow):
             if not file_name.lower().endswith(('.html', '.htm')):
                 file_name += '.html'
             self.output_file_edit.setText(file_name)
+
+    def clear_dialouges(self):
+        """Remove all dialogue frames and clear dialogue data."""
+        # 1. Remove all dialogue group boxes from the layout and delete them
+        for frame in self.dialogues_scroll_container.findChildren(QGroupBox):
+            # Only delete top‑level dialogue frames (they contain the attribute 'dialogue_data')
+            if hasattr(frame, 'dialogue_data'):
+                # Remove the associated data from the list
+                if frame.dialogue_data in self.dialouges:
+                    self.dialouges.remove(frame.dialogue_data)
+                # Delete the widget
+                frame.deleteLater()
+
+        # 2. Clear the entire list (safe even if some entries were missed)
+        self.dialouges.clear()
+
+        # 3. Restore the stretch at the bottom of the container layout
+        #    (it might have been removed if all frames were deleted)
+        #    First, remove any existing stretches
+        while True:
+            last_item = self.dialogues_container_layout.itemAt(
+                self.dialogues_container_layout.count() - 1
+            )
+            if last_item and last_item.spacerItem():
+                self.dialogues_container_layout.removeItem(last_item)
+            else:
+                break
+        # Add a fresh stretch
+        self.dialogues_container_layout.addStretch()
+        self.dialouges = []
+
+    def remove_all_reading_passages(self):
+        """Remove all reading passage frames and clear passage data."""
+        # 1. Find and delete every top‑level passage frame
+        for frame in self.reading_passages_scroll_container.findChildren(QGroupBox):
+            # The main passage frames have the custom attribute 'passage_data'
+            if hasattr(frame, 'passage_data'):
+                # Remove its data from the list
+                if frame.passage_data in self.reading_passages:
+                    self.reading_passages.remove(frame.passage_data)
+                # Delete the widget (all child widgets, including questions, are auto‑deleted)
+                frame.deleteLater()
+
+        # 2. Explicitly clear the data list (catches any missed entries)
+        self.reading_passages.clear()
+
+        self.reading_passages = []
+
+        # 3. Restore the stretch at the bottom of the container layout
+        while True:
+            last_item = self.reading_passages_container_layout.itemAt(
+                self.reading_passages_container_layout.count() - 1
+            )
+            if last_item and last_item.spacerItem():
+                self.reading_passages_container_layout.removeItem(last_item)
+            else:
+                break
+        self.reading_passages_container_layout.addStretch()
             
     def new_config(self):
         """Clear all data and reset to default"""
@@ -1381,15 +1429,11 @@ class AnimalLearningGameGenerator(QMainWindow):
                 self.remove_question_frame(question)
             self.questions = []
             
-            # Clear dialogues data and UI widgets
-            for dialogue in self.dialogues[:]:
-                self.remove_dialogue_frame(dialogue, dialogue.dialogue_data)
-            self.dialogues = []
-            
+            # Clear dialouges data and UI widgets
+            self.clear_dialouges()
+
             # Clear reading passages data and UI widgets
-            for passage in self.reading_passages[:]:
-                self.remove_reading_passage_frame(passage, passage.passage_data)
-            self.reading_passages = []
+            self.remove_all_reading_passages()
             
             # Reset settings
             if hasattr(self, 'animals_per_row_spinbox'):
@@ -1570,7 +1614,7 @@ class AnimalLearningGameGenerator(QMainWindow):
             
             # Prepare dialogues data
             dialogues_data = []
-            for dialogue_frame in self.dialogues:
+            for dialogue_frame in self.dialouges:
                 if hasattr(dialogue_frame, 'dialogue_data'):
                     dialogues_data.append(dialogue_frame.dialogue_data)
             
@@ -1686,10 +1730,27 @@ class AnimalLearningGameGenerator(QMainWindow):
             return ""
             
     def generate_html(self):
+        print(self.animals_per_row_spinbox.value())
         print("1")
-        print(self.animals)
+        for i, frame in enumerate(self.animals, start=1):
+            print(f"Animal {i}:")
+            print(f"  Image URL: {frame.image_url.text()}")
+            print(f"  Title: {frame.title.text()}")
+            print(f"  Word to speak: {frame.word.text()}")
+            print(f"  Audio file: {frame.audio.text()}")
+            print()  # blank line between animals
         print("2")
-        print(self.questions)
+        for idx, frame in enumerate(self.questions, start=1):
+            print(f"Question {idx}:")
+            print(f"  Image URL: {frame.image_url.text()}")
+            print(f"  Question Text: {frame.question_text.text()}")
+            print("  Answers:")
+
+            # Iterate through answer entries and their corresponding radio buttons
+            for ans_idx, (entry, radio) in enumerate(zip(frame.answer_entries, frame.radio_buttons), start=1):
+                correct = "*" if radio.isChecked() else " "   # mark correct answer
+                print(f"    {ans_idx}. [{correct}] {entry.text()}")
+            print()  # blank line between questions
         print("3")
         print(self.dialouges)
         print("4")
@@ -1698,7 +1759,7 @@ class AnimalLearningGameGenerator(QMainWindow):
         try:
             # Prepare animals HTML
             animals_html = ""
-            animals_per_row = int(self.animals_per_row_var.get())
+            animals_per_row = int(self.animals_per_row_spinbox.value())
             test_title_var=""
             test_title_var+=f"""{self.test_title_var.get()}"""
             
