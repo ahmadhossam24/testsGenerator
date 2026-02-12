@@ -1481,11 +1481,9 @@ class AnimalLearningGameGenerator(QMainWindow):
             for question in self.questions[:]:
                 self.remove_question_frame(question)
             
-            for dialogue in self.dialogues[:]:
-                self.remove_dialogue_frame(dialogue, dialogue.dialogue_data)
+            self.clear_dialouges()
             
-            for passage in self.reading_passages[:]:
-                self.remove_reading_passage_frame(passage, passage.passage_data)
+            self.remove_all_reading_passages()
             
             # Load animals
             for animal_data in config.get('animals', []):
@@ -1613,16 +1611,10 @@ class AnimalLearningGameGenerator(QMainWindow):
                     })
             
             # Prepare dialogues data
-            dialogues_data = []
-            for dialogue_frame in self.dialouges:
-                if hasattr(dialogue_frame, 'dialogue_data'):
-                    dialogues_data.append(dialogue_frame.dialogue_data)
+            dialogues_data = self.dialouges
             
             # Prepare reading passages data
-            reading_passages_data = []
-            for passage_frame in self.reading_passages:
-                if hasattr(passage_frame, 'passage_data'):
-                    reading_passages_data.append(passage_frame.passage_data)
+            reading_passages_data = self.reading_passages
             
             # Prepare config
             config = {
