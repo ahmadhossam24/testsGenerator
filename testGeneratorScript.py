@@ -1301,6 +1301,7 @@ class AnimalLearningGameGenerator(QMainWindow):
             passage_frame.deleteLater()
     
     def add_reading_passage_frame_loaded_config(self, title, text, questions):
+        print("xxx")
         """Add reading passage frame with loaded configuration"""
         return self.add_reading_passage_frame(title, text, questions)
         
@@ -1494,55 +1495,63 @@ class AnimalLearningGameGenerator(QMainWindow):
                     frame.word.setText(animal_data.get('word', ''))
                     frame.audio.setText(animal_data.get('audio', ''))
             
-            # Load questions
+            # Load questions from configuration
             for question_data in config.get('questions', []):
+                print("1")
+                # 1. Create a new question frame
                 frame = self.add_question_frame()
-                if frame and hasattr(frame, 'image_url'):
-                    frame.image_url.setText(question_data.get('image_url', ''))
-                    frame.question_text.setText(question_data.get('text', ''))
-                    
-                    # Clear default answers
-                    while frame.answer_entries:
-                        # We need to simulate removing the first answer
-                        # Since we don't have direct access to the row widgets,
-                        # we'll need to remove them from the layout
-                        if hasattr(frame, 'answers_layout'):
-                            item = frame.answers_layout.takeAt(0)
-                            if item and item.widget():
-                                widget = item.widget()
-                                if widget != frame.add_answer_button:  # Don't remove the add button
-                                    frame.answers_layout.removeWidget(widget)
-                                    widget.deleteLater()
-                    
-                    # Add answers from config
-                    answers = question_data.get('answers', [])
-                    correct_index = question_data.get('correct_index', 0)
-                    
-                    for i, answer in enumerate(answers):
-                        if hasattr(frame, 'add_answer_row'):
-                            frame.add_answer_row()
-                            if frame.answer_entries and i < len(frame.answer_entries):
-                                frame.answer_entries[i].setText(answer)
-                    
-                    # Set correct answer
-                    if answers and 0 <= correct_index < len(frame.radio_buttons):
-                        frame.radio_buttons[correct_index].setChecked(True)
-            
+                if not frame:
+                    continue
+
+                # 2. Set image URL and question text
+                frame.image_url.setText(question_data.get('image_url', ''))
+                frame.question_text.setText(question_data.get('text', ''))
+
+                # 3. Clear all default answer rows (keep only the "Add Answer" button)
+                #    Clear the stored lists first
+                frame.answer_entries.clear()
+                frame.radio_buttons.clear()
+
+                #    Remove every widget from the answers layout that is NOT the "Add Answer" button
+                layout = frame.answers_layout
+                for i in reversed(range(layout.count())):          # iterate backwards to avoid shifting
+                    print("1.1")
+                    item = layout.itemAt(i)
+                    widget = item.widget()
+                    if widget is not None:
+                        # Keep the "Add Answer" button – it's a QPushButton with that exact text
+                        if isinstance(widget, QPushButton) and widget.text() == "Add Answer":
+                            continue
+                        else:
+                            layout.removeWidget(widget)
+                            widget.deleteLater()
+
+                # 4. Add new answer rows from the config data
+                answers = question_data.get('answers', [])
+                for answer_text in answers:
+                    frame.add_answer_row(answer_text)
+
+                # 5. Mark the correct answer
+                correct_index = question_data.get('correct_index', 0)
+                if frame.radio_buttons and 0 <= correct_index < len(frame.radio_buttons):
+                    frame.radio_buttons[correct_index].setChecked(True)
+            print("2")
             # Load dialogues
             for dialogue_data in config.get('dialogues', []):
                 self.add_dialogue_frame_loaded_config(
                     dialogue_data.get('title', ''),
                     dialogue_data.get('lines', [])
                 )
-            
+            print("3")
             # Load reading passages
             for passage_data in config.get('reading_passages', []):
+                print("3.3")
                 self.add_reading_passage_frame_loaded_config(
                     passage_data.get('title', ''),
                     passage_data.get('text', ''),
                     passage_data.get('questions', [])
                 )
-            
+            print("4")
             # Load settings
             if 'animals_per_row' in config and hasattr(self, 'animals_per_row_spinbox'):
                 self.animals_per_row_spinbox.setValue(config['animals_per_row'])
