@@ -1760,13 +1760,13 @@ class AnimalLearningGameGenerator(QMainWindow):
         print(self.dialouges)
         print("4")
         print(self.reading_passages)
-        return
+        
         try:
             # Prepare animals HTML
             animals_html = ""
             animals_per_row = int(self.animals_per_row_spinbox.value())
             test_title_var=""
-            test_title_var+=f"""{self.test_title_var.get()}"""
+            test_title_var+=f"""{self.test_title_edit.text()}"""
             
             for i, animal in enumerate(self.animals):
                 if i % animals_per_row == 0:
@@ -1776,7 +1776,7 @@ class AnimalLearningGameGenerator(QMainWindow):
                 
                 # Encode audio file to base64
                 audio_data = ""
-                audio_path = animal.audio.get()
+                audio_path = animal.audio.text()
                 if audio_path and os.path.exists(audio_path):
                     with open(audio_path, 'rb') as audio_file:
                         audio_data = base64.b64encode(audio_file.read()).decode('utf-8')
@@ -1787,8 +1787,8 @@ class AnimalLearningGameGenerator(QMainWindow):
                 
                 animals_html += f"""
                 <div class="animal-card">
-                    <img src="{animal.image_url.get()}" alt="{animal.word.get()}" onclick="playAudio('audio_{i}')">
-                    <div class="animal-name">{animal.title.get()}</div>
+                    <img src="{animal.image_url.text()}" alt="{animal.word.text()}" onclick="playAudio('audio_{i}')">
+                    <div class="animal-name">{animal.title.text()}</div>
                     <button class="repeat-btn" onclick="playAudio('audio_{i}')">🔊 Repeat</button>
                     <audio id="audio_{i}">
                         <source src="data:{mime_type};base64,{audio_data}" type="{mime_type}">
@@ -1867,21 +1867,30 @@ class AnimalLearningGameGenerator(QMainWindow):
                 
             # Prepare questions HTML
             questions_html = ""
-            for i, question in enumerate(self.questions):
-                question_text = question.question_text.get()
-                image_url = question.image_url.get()
-                answers = [entry.get() for entry in question.answer_entries]
-                correct_index = int(question.correct_answer_var.get()) if question.correct_answer_var.get() else 0
 
-                # Add image if provided
+            for i, question in enumerate(self.questions):
+                question_text = question.question_text.text()
+                image_url = question.image_url.text()
+
+                answers = []
+                correct_index = 0
+
+                # Get answers + correct index from radio buttons
+                for idx, (entry, radio) in enumerate(zip(question.answer_entries, question.radio_buttons)):
+                    answers.append(entry.text())
+                    if radio.isChecked():
+                        correct_index = idx
+
+                # Image
                 image_html = ""
                 if image_url:
                     image_html = f'<img src="{image_url}" alt="Question image" style="max-width: 300px; margin-bottom: 15px; border-radius: 15px;">'
-                
+
+                # Answers HTML
                 answers_html = ""
                 for j, answer in enumerate(answers):
                     answers_html += f'<div class="answer" onclick="checkAnswer({i+1}, {j})">{answer}</div>\n'
-                
+
                 questions_html += f"""
                 <div class="question" id="q{i+1}">
                     {image_html}
@@ -1895,18 +1904,34 @@ class AnimalLearningGameGenerator(QMainWindow):
                 
             # Prepare correct answers JavaScript
             correct_answers_js = "const correctAnswers = {\n"
+
             for i, question in enumerate(self.questions):
-                correct_index = int(question.correct_answer_var.get()) if question.correct_answer_var.get() else 0
+                correct_index = 0
+
+                for idx, radio in enumerate(question.radio_buttons):
+                    if radio.isChecked():
+                        correct_index = idx
+                        break
+
                 correct_answers_js += f"    {i+1}: {correct_index},\n"
+
             correct_answers_js += "};\n"
             
             # Prepare correct answer text for audio
             correct_answer_text_js = "const correctAnswerText = {\n"
+
             for i, question in enumerate(self.questions):
-                answers = [entry.get() for entry in question.answer_entries]
-                correct_index = int(question.correct_answer_var.get()) if question.correct_answer_var.get() else 0
+                answers = [entry.text() for entry in question.answer_entries]
+
+                correct_index = 0
+                for idx, radio in enumerate(question.radio_buttons):
+                    if radio.isChecked():
+                        correct_index = idx
+                        break
+
                 if 0 <= correct_index < len(answers):
                     correct_answer_text_js += f"    {i+1}: \"{answers[correct_index]}\",\n"
+
             correct_answer_text_js += "};\n"
             
             successAudioEncoded=f""" 
@@ -2998,7 +3023,7 @@ All rights reserved © 2026 – Educational Design and Development
             )
             
             # Save HTML file
-            output_file = self.output_file_var.get()
+            output_file = self.output_file_edit.text()
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(html_content)
                 
