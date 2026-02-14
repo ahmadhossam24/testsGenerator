@@ -1149,11 +1149,14 @@ class AnimalLearningGameGenerator(QMainWindow):
             correct_choice_group.setExclusive(True)
             
             # Function to add a choice
-            def add_choice(choice_data=None, is_correct=False):
+            def add_choice(choice_data=None, is_correct=False,append_to_data=True):
+                
                 if choice_data is None:
                     choice_data = {"value": ""}
+                    append_to_data = True  # New choices should always be appended
                 
-                question_data["choices"].append(choice_data)
+                if append_to_data:
+                    question_data["choices"].append(choice_data)
                 
                 choice_widget = QWidget()
                 choice_layout = QHBoxLayout(choice_widget)
@@ -1224,7 +1227,7 @@ class AnimalLearningGameGenerator(QMainWindow):
             # Add choices if any
             for i, choice in enumerate(question_data.get("choices", [])):
                 is_correct = (i == question_data.get("correct_choice_index"))
-                add_choice(choice, is_correct)
+                add_choice(choice, is_correct, append_to_data=False)  # <-- Prevent duplication
             
             # Add choice button
             add_choice_button = QPushButton("Add Choice")
@@ -1277,6 +1280,7 @@ class AnimalLearningGameGenerator(QMainWindow):
         
         # Add loaded questions
         for loaded_question in loaded_questions:
+            print("here")
             add_question(loaded_question)
         
         # Add questions container to passage layout
@@ -1301,7 +1305,7 @@ class AnimalLearningGameGenerator(QMainWindow):
             passage_frame.deleteLater()
     
     def add_reading_passage_frame_loaded_config(self, title, text, questions):
-        print("xxx")
+        
         """Add reading passage frame with loaded configuration"""
         return self.add_reading_passage_frame(title, text, questions)
         
@@ -1497,7 +1501,7 @@ class AnimalLearningGameGenerator(QMainWindow):
             
             # Load questions from configuration
             for question_data in config.get('questions', []):
-                print("1")
+                
                 # 1. Create a new question frame
                 frame = self.add_question_frame()
                 if not frame:
@@ -1515,7 +1519,7 @@ class AnimalLearningGameGenerator(QMainWindow):
                 #    Remove every widget from the answers layout that is NOT the "Add Answer" button
                 layout = frame.answers_layout
                 for i in reversed(range(layout.count())):          # iterate backwards to avoid shifting
-                    print("1.1")
+                    
                     item = layout.itemAt(i)
                     widget = item.widget()
                     if widget is not None:
@@ -1535,23 +1539,23 @@ class AnimalLearningGameGenerator(QMainWindow):
                 correct_index = question_data.get('correct_index', 0)
                 if frame.radio_buttons and 0 <= correct_index < len(frame.radio_buttons):
                     frame.radio_buttons[correct_index].setChecked(True)
-            print("2")
+            
             # Load dialogues
             for dialogue_data in config.get('dialogues', []):
                 self.add_dialogue_frame_loaded_config(
                     dialogue_data.get('title', ''),
                     dialogue_data.get('lines', [])
                 )
-            print("3")
+            
             # Load reading passages
             for passage_data in config.get('reading_passages', []):
-                print("3.3")
+                
                 self.add_reading_passage_frame_loaded_config(
                     passage_data.get('title', ''),
                     passage_data.get('text', ''),
                     passage_data.get('questions', [])
                 )
-            print("4")
+            
             # Load settings
             if 'animals_per_row' in config and hasattr(self, 'animals_per_row_spinbox'):
                 self.animals_per_row_spinbox.setValue(config['animals_per_row'])
