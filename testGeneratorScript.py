@@ -6,15 +6,14 @@ from PySide6.QtWidgets import  (
     QPushButton, QScrollArea, QSizePolicy, QGridLayout,QLineEdit, QFileDialog, QGroupBox,QRadioButton,
     QButtonGroup, QTextEdit, QCheckBox,QComboBox,QMessageBox
 ) 
-from PySide6.QtGui import QAction, QKeySequence
-from PySide6.QtCore import Qt,QSize,Signal
+from PySide6.QtGui import QAction, QKeySequence,QDrag
+from PySide6.QtCore import Qt,QSize,Signal, QMimeData, QPoint
 import json
 import base64
 import sys
 import os
 import urllib.request
 from pathlib import Path
-
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
     try:
@@ -24,6 +23,100 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
+
+class DraggableLineFrame(QFrame):
+    """A frame that can be dragged to reorder dialogue lines."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setAcceptDrops(True)
+        self.drag_start_position = None
+        self.dragged = False
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.drag_start_position = event.pos()
+            self.dragged = False
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if not (event.buttons() & Qt.LeftButton):
+            return
+        if self.drag_start_position is None:
+            return
+        # Start drag if mouse moved enough
+        if (event.pos() - self.drag_start_position).manhattanLength() < QApplication.startDragDistance():
+            return
+        self.dragged = True
+        drag = QDrag(self)
+        mime_data = QMimeData()
+        mime_data.setText("internal_move")
+        drag.setMimeData(mime_data)
+        # Optional: set a pixmap for visual feedback
+        drag.exec_(Qt.MoveAction)
+        super().mouseMoveEvent(event)
+
+    def dragEnterEvent(self, event):
+        source = event.source()
+        if source and isinstance(source, DraggableLineFrame) and source != self:
+            # Ensure both lines belong to the same dialogue
+            if self._same_dialogue(source):
+                event.acceptProposedAction()
+                return
+        event.ignore()
+
+    def dragMoveEvent(self, event):
+        if event.source() and isinstance(event.source(), DraggableLineFrame):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        source_frame = event.source()
+        if (source_frame and isinstance(source_frame, DraggableLineFrame) and
+                source_frame != self and self._same_dialogue(source_frame)):
+            # Get the layout that contains both frames
+            layout = self.parent().layout()
+            if not layout:
+                return
+            source_index = layout.indexOf(source_frame)
+            target_index = layout.indexOf(self)
+            if source_index == -1 or target_index == -1:
+                return
+            # Adjust target index after removal if needed
+            if source_index < target_index:
+                target_index -= 1
+
+            # Get the dialogue data
+            dialogue_frame = self._get_dialogue_frame()
+            if not dialogue_frame or not hasattr(dialogue_frame, 'dialogue_data'):
+                return
+            lines_list = dialogue_frame.dialogue_data["lines"]
+            line_data = source_frame.line_data
+
+            # Remove from data list and layout
+            lines_list.remove(line_data)
+            layout.removeWidget(source_frame)
+
+            # Insert at new position in layout and data list
+            layout.insertWidget(target_index, source_frame)
+            lines_list.insert(target_index, line_data)
+
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def _same_dialogue(self, other_frame):
+        """Check if both frames are in the same dialogue group."""
+        return self._get_dialogue_frame() == other_frame._get_dialogue_frame()
+
+    def _get_dialogue_frame(self):
+        """Traverse up to find the parent QGroupBox that holds dialogue_data."""
+        parent = self.parent()
+        while parent:
+            if hasattr(parent, 'dialogue_data'):
+                return parent
+            parent = parent.parent()
+        return None
 
 class AnimalLearningGameGenerator(QMainWindow):
     def __init__(self):
@@ -748,7 +841,7 @@ class AnimalLearningGameGenerator(QMainWindow):
             dialogue_data["lines"].append(line_data)
             
             # Create line frame
-            line_frame = QFrame()
+            line_frame = DraggableLineFrame()  
             line_frame.setStyleSheet("""
                 QFrame {
                     border: 1px solid #ccc;
@@ -1760,7 +1853,6 @@ class AnimalLearningGameGenerator(QMainWindow):
         print(self.dialouges)
         print("4")
         print(self.reading_passages)
-        
         try:
             # Prepare animals HTML
             animals_html = ""
